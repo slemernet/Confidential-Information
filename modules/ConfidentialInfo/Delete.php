@@ -16,12 +16,15 @@ $return_module = vtlib_purify($_REQUEST['return_module']);
 $return_action = vtlib_purify($_REQUEST['return_action']);
 $return_id = vtlib_purify($_REQUEST['return_id']);
 $parenttab = getParentTab();
-
-//Added to fix 4600
 $url = getBasic_Advance_SearchURL();
+if (!empty($_REQUEST['start']) and !empty($_REQUEST['return_viewname'])) {
+	$start = vtlib_purify($_REQUEST['start']);
+	$relationId = vtlib_purify($_REQUEST['return_viewname']);
+	$_SESSION['rlvs'][$return_module][$relationId]['start'] = $start;
+}
+if(isset($_REQUEST['activity_mode']))
+	$url .= '&activity_mode='.vtlib_purify($_REQUEST['activity_mode']);
 $focus->set_cinfo_history($record,'delete','');
 DeleteEntity($currentModule, $return_module, $focus, $record, $return_id);
-
 header("Location: index.php?module=$return_module&action=$return_action&record=$return_id&parenttab=$parenttab&relmodule=$module".$url);
-
 ?>

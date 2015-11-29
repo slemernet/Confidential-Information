@@ -9,16 +9,13 @@
  ************************************************************************************/
 global $currentModule;
 $modObj = CRMEntity::getInstance($currentModule);
-
 $ajaxaction = $_REQUEST["ajxaction"];
-if($ajaxaction == 'DETAILVIEW')
-{
+if($ajaxaction == 'DETAILVIEW') {
 	$crmid = $_REQUEST['recordid'];
 	$tablename = $_REQUEST['tableName'];
 	$fieldname = $_REQUEST['fldName'];
-	$fieldvalue = utf8RawUrlDecode($_REQUEST['fieldValue']); 
-	if($crmid != '')
-	{
+	$fieldvalue = utf8RawUrlDecode($_REQUEST['fieldValue']);
+	if($crmid != '') {
 		$rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
 		if (empty($rsps) or $adb->num_rows($rsps)==0) {
 			echo ':#:FAILURE';
@@ -48,7 +45,7 @@ if($ajaxaction == 'DETAILVIEW')
 	{
 		echo ':#:FAILURE';
 	}
-} elseif($ajaxaction == "LOADRELATEDLIST" || $ajaxaction == "DISABLEMODULE"){
+} elseif ($ajaxaction == "LOADRELATEDLIST" || $ajaxaction == "DISABLEMODULE") {
 	require_once 'include/ListView/RelatedListViewContents.php';
 }
 ?>

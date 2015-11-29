@@ -7,8 +7,7 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
-
-global $app_strings, $mod_strings, $current_language, $currentModule, $theme;
+global $app_strings, $mod_strings, $current_language, $currentModule, $theme, $adb;
 require_once('Smarty_setup.php');
 
 $focus = CRMEntity::getInstance($currentModule);
@@ -99,10 +98,9 @@ if(empty($_REQUEST['record']) && $focus->mode != 'edit'){
 }
 
 $disp_view = getView($focus->mode);
-	$smarty->assign('BLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields));
-	$smarty->assign('BASBLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields, 'BAS'));
-	$smarty->assign('ADVBLOCKS',getBlocks($currentModule,$disp_view,$mode,$focus->column_fields,'ADV'));
-
+$smarty->assign('BLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields));
+$smarty->assign('BASBLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields, 'BAS'));
+$smarty->assign('ADVBLOCKS',getBlocks($currentModule,$disp_view,$focus->mode,$focus->column_fields,'ADV'));
 $smarty->assign('OP_MODE',$disp_view);
 $smarty->assign('ID', $focus->id);
 $smarty->assign('MODE', $focus->mode);
@@ -121,6 +119,8 @@ if(isset($_REQUEST['return_module']))    $smarty->assign("RETURN_MODULE", vtlib_
 if(isset($_REQUEST['return_action']))    $smarty->assign("RETURN_ACTION", vtlib_purify($_REQUEST['return_action']));
 if(isset($_REQUEST['return_id']))        $smarty->assign("RETURN_ID", vtlib_purify($_REQUEST['return_id']));
 if (isset($_REQUEST['return_viewname'])) $smarty->assign("RETURN_VIEWNAME", vtlib_purify($_REQUEST['return_viewname']));
+$smarty->assign("UPLOADSIZE", $upload_maxsize/1000000); //Convert to MB
+$smarty->assign("UPLOAD_MAXSIZE",$upload_maxsize);
 
 // Field Validation Information
 $tabid = getTabid($currentModule);
@@ -135,28 +135,30 @@ $smarty->assign("VALIDATION_DATA_FIELDLABEL",$validationArray['fieldlabel']);
 $smarty->assign("CALENDAR_LANG", $app_strings['LBL_JSCALENDAR_LANG']);
 $smarty->assign("CALENDAR_DATEFORMAT", parse_calendardate($app_strings['NTC_DATE_FORMAT']));
 
-global $adb;
 // Module Sequence Numbering
 $mod_seq_field = getModuleSequenceField($currentModule);
 if($focus->mode != 'edit' && $mod_seq_field != null) {
-		$autostr = getTranslatedString('MSG_AUTO_GEN_ON_SAVE');
+	$autostr = getTranslatedString('MSG_AUTO_GEN_ON_SAVE');
+	list($mod_seq_string, $mod_seq_prefix, $mod_seq_no, $doNative) = cbEventHandler::do_filter('corebos.filter.ModuleSeqNumber.get', array('', '', '', true));
+	if ($doNative) {
 		$mod_seq_string = $adb->pquery("SELECT prefix, cur_id from vtiger_modentity_num where semodule = ? and active=1",array($currentModule));
-        $mod_seq_prefix = $adb->query_result($mod_seq_string,0,'prefix');
-        $mod_seq_no = $adb->query_result($mod_seq_string,0,'cur_id');
-        if($adb->num_rows($mod_seq_string) == 0 || $focus->checkModuleSeqNumber($focus->table_name, $mod_seq_field['column'], $mod_seq_prefix.$mod_seq_no))
-                echo '<br><font color="#FF0000"><b>'. getTranslatedString('LBL_DUPLICATE'). ' '. getTranslatedString($mod_seq_field['label'])
-                	.' - '. getTranslatedString('LBL_CLICK') .' <a href="index.php?module=Settings&action=CustomModEntityNo&parenttab=Settings&selmodule='.$currentModule.'">'.getTranslatedString('LBL_HERE').'</a> '
-                	. getTranslatedString('LBL_TO_CONFIGURE'). ' '. getTranslatedString($mod_seq_field['label']) .'</b></font>';
-        else
-                $smarty->assign("MOD_SEQ_ID",$autostr);
+		$mod_seq_prefix = $adb->query_result($mod_seq_string,0,'prefix');
+		$mod_seq_no = $adb->query_result($mod_seq_string,0,'cur_id');
+	}
+	if ($adb->num_rows($mod_seq_string) == 0 || $focus->checkModuleSeqNumber($focus->table_name, $mod_seq_field['column'], $mod_seq_prefix.$mod_seq_no)) {
+		$smarty->assign('ERROR_MESSAGE_CLASS', 'cb-alert-warning');
+		$smarty->assign('ERROR_MESSAGE', '<b>'. getTranslatedString($mod_seq_field['label']). ' '. getTranslatedString('LBL_NOT_CONFIGURED')
+			.' - '. getTranslatedString('LBL_PLEASE_CLICK') .' <a href="index.php?module=Settings&action=CustomModEntityNo&parenttab=Settings&selmodule='.$currentModule.'">'.getTranslatedString('LBL_HERE').'</a> '
+			. getTranslatedString('LBL_TO_CONFIGURE'). ' '. getTranslatedString($mod_seq_field['label']) .'</b>');
+	} else {
+		$smarty->assign("MOD_SEQ_ID",$autostr);
+	}
 } else {
 	$smarty->assign("MOD_SEQ_ID", $focus->column_fields[$mod_seq_field['name']]);
 }
-// END
 
 // Gather the help information associated with fields
 $smarty->assign('FIELDHELPINFO', vtlib_getFieldHelpInfo($currentModule));
-// END
 
 $picklistDependencyDatasource = Vtiger_DependencyPicklist::getPicklistDependencyDatasource($currentModule);
 $smarty->assign("PICKIST_DEPENDENCY_DATASOURCE", Zend_Json::encode($picklistDependencyDatasource));
