@@ -29,7 +29,9 @@ jQuery.fn.countDown = function(settings,to) {
 			'fontSize': settings.endFontSize
 		},settings.duration,'',function() {
 			if(to > settings.endNumber + 1) {
-				jQuery(this).css('fontSize',settings.startFontSize).text(to - 1).countDown(settings,to - 1);
+				if (jQuery(this).countDown!=undefined) {
+					jQuery(this).css('fontSize',settings.startFontSize).text(to - 1).countDown(settings,to - 1);
+				}
 			}
 			else
 			{
