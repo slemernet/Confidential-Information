@@ -1,8 +1,8 @@
-Index: include/js/dtlviewajax.js
-===================================================================
---- include/js/dtlviewajax.js	(revisión: 568)
-+++ include/js/dtlviewajax.js	(copia de trabajo)
-@@ -242,6 +242,9 @@
+diff --git a/include/js/dtlviewajax.js b/include/js/dtlviewajax.js
+index 6afc799..d1281ec 100644
+--- a/include/js/dtlviewajax.js
++++ b/include/js/dtlviewajax.js
+@@ -262,6 +262,9 @@ function dtlViewAjaxSave(fieldLabel,module,uitype,tableName,fieldName,crmId)
  
  	var data = "file=DetailViewAjax&module=" + module + "&action=" + module + "Ajax&record=" + crmId+"&recordid=" + crmId ;
  	data = data + "&fldName=" + fieldName + "&fieldValue=" + escapeAll(tagValue) + "&ajxaction=DETAILVIEW"+groupurl;
