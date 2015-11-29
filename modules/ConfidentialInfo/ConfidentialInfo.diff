@@ -1,0 +1,14 @@
+Index: include/js/dtlviewajax.js
+===================================================================
+--- include/js/dtlviewajax.js	(revisión: 568)
++++ include/js/dtlviewajax.js	(copia de trabajo)
+@@ -242,6 +242,9 @@
+ 
+ 	var data = "file=DetailViewAjax&module=" + module + "&action=" + module + "Ajax&record=" + crmId+"&recordid=" + crmId ;
+ 	data = data + "&fldName=" + fieldName + "&fieldValue=" + escapeAll(tagValue) + "&ajxaction=DETAILVIEW"+groupurl;
++	if(module == 'ConfidentialInfo') {
++		data += "&cidwspinfo=" + encodeURIComponent(document.getElementById('cidwspinfo').value);
++	}
+ 	if(module == 'Users') {
+ 		data += "&form_token=" + (document.getElementsByName('form_token')[0].value);
+ 	}

@@ -1,0 +1,7 @@
+{
+  "name": "tsolucio/Confidential-Information",
+  "type": "corebos-module",
+  "require": {
+    "composer/installers": "~1.0"
+  }
+}
