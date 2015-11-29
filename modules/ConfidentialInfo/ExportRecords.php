@@ -7,6 +7,5 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
-//require_once('include/utils/ExportRecords.php');
-echo "<br>".getTranslatedString('DisabledProcess','ConfidentialInfo');
+require_once('modules/ConfidentialInfo/NotSupported.php');
 ?>
