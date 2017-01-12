@@ -1,7 +1,28 @@
 {
-  "name": "tsolucio/Confidential-Information",
-  "type": "corebos-module",
-  "require": {
-    "composer/installers": "~1.0"
+	"name": "tsolucio/Confidential-Information",
+	"type": "corebos-module",
+	"properties": {
+		"name": "Confidential Information",
+		"description": "Extension to safely store sensitive information. Data will be encrypted and only accessible by users with the appropriate credentials. The goal of the module is to protect sensitive information both from unauthorized access from within the company and from anybody who could somehow get a hold of our full database, be them ill-intentioned or simply third parties that require access to support or solve problems.",
+		"keywords": ["security","confidential","encription","hide","secure","protect"],
+		"homepage": "http://corebos.org/documentation/doku.php?id=en:extensions:extensions:confidentialinfo",
+		"version": "1.2",
+		"time": "2015-11-30",
+		"license": "Vizsage",
+		"extra": {
+			"distribution": "Free"
+		},
+		"authors": [
+					{
+					"name": "JPL TSolucio, S.L.",
+					"email": "info(at)tsolucio(dot)com"
   }
+		],
+		"support": {
+				"email": "info(at)tsolucio(dot)com",
+				"issues": "https://github.com/tsolucio/Confidential-Information",
+				"forum": "http://discussions.corebos.org/",
+				"source": "https://github.com/tsolucio/Confidential-Information"
+}
+	}
 }
