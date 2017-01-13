@@ -23,11 +23,9 @@ Extension to safely store sensitive information. Data will be encrypted and only
 
 **Author email** : info(at)tsolucio(dot)com
 
-[**Support email**](info(at)tsolucio(dot)com)
+**Support email** : info(at)tsolucio(dot)com
 
 [**Support issues**](https://github.com/tsolucio/Confidential-Information)
 
 [**Support forum**](http://discussions.corebos.org/)
-
-[**Support source**](https://github.com/tsolucio/Confidential-Information)
 
