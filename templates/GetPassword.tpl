@@ -1,4 +1,4 @@
-{include file='Buttons_List1.tpl'}	
+{include file='Buttons_List.tpl'}	
 <form name="GetPassword" method="POST" action="index.php" style="margin:30px">
 <h2>{'GetPassword'|@getTranslatedString:$MODULE}</h2>
 {if $BadPassword eq 'true'}<h3 style="color:red">{'IncorrectPassword'|@getTranslatedString:$MODULE}</h3>{/if}

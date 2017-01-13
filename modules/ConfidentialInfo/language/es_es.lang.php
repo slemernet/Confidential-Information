@@ -9,7 +9,6 @@
  ************************************************************************************/
 
 $mod_strings = Array(
-	'ModuleName' => 'Información Confidencial',
 	'ConfidentialInfo' => 'Información Confidencial',
 	'SINGLE_ConfidentialInfo' => 'Información Confidencial',
 	'ConfidentialInfo ID' => 'ID IC',

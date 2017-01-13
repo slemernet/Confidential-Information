@@ -7,13 +7,13 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
-global $current_user, $currentModule, $singlepane_view, $adb;
+global $current_user, $currentModule, $singlepane_view;
 
 checkFileAccessForInclusion("modules/$currentModule/$currentModule.php");
 require_once("modules/$currentModule/$currentModule.php");
 
-$search = vtlib_purify($_REQUEST['search_url']);
-
+$search = isset($_REQUEST['search_url']) ? vtlib_purify($_REQUEST['search_url']) : '';
+global $adb;
 $rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
 if (empty($rsps) or $adb->num_rows($rsps)==0) {
 	$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'ErrorPassword.tpl'));

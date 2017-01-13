@@ -12,28 +12,20 @@ require_once('Smarty_setup.php');
 
 $focus = CRMEntity::getInstance($currentModule);
 $smarty = new vtigerCRM_Smarty();
+// Identify this module as custom module.
+$smarty->assign('CUSTOM_MODULE', $focus->IsCustomModule);
 
 $category = getParentTab($currentModule);
-$record = vtlib_purify($_REQUEST['record']);
-$isduplicate = vtlib_purify($_REQUEST['isDuplicate']);
-
-$smarty->assign('APP', $app_strings);
-$smarty->assign('MOD', $mod_strings);
-$smarty->assign('MODULE', $currentModule);
-// TODO: Update Single Module Instance name here.
-$smarty->assign('SINGLE_MOD', 'SINGLE_'.$currentModule);
-$smarty->assign('CATEGORY', $category);
-$smarty->assign("THEME", $theme);
-$smarty->assign('IMAGE_PATH', "themes/$theme/images/");
-$smarty->assign('CREATEMODE', vtlib_purify($_REQUEST['createmode']));
+$record = isset($_REQUEST['record']) ? vtlib_purify($_REQUEST['record']) : null;
+$isduplicate = isset($_REQUEST['isDuplicate']) ? vtlib_purify($_REQUEST['isDuplicate']) : null;
 
 $cidwspinfo = vtlib_purify($_REQUEST['cidwspinfo']);
 if (empty($cidwspinfo)) {
-	if(isset($_REQUEST['return_module']))    $smarty->assign("RETURN_MODULE", vtlib_purify($_REQUEST['return_module']));
-	if(isset($_REQUEST['return_action']))    $smarty->assign("RETURN_ACTION", vtlib_purify($_REQUEST['return_action']));
-	if(isset($_REQUEST['return_id']))        $smarty->assign("RETURN_ID", vtlib_purify($_REQUEST['return_id']));
+	if (isset($_REQUEST['return_module']))   $smarty->assign("RETURN_MODULE", vtlib_purify($_REQUEST['return_module']));
+	if (isset($_REQUEST['return_action']))   $smarty->assign("RETURN_ACTION", vtlib_purify($_REQUEST['return_action']));
+	if (isset($_REQUEST['return_id']))       $smarty->assign("RETURN_ID", vtlib_purify($_REQUEST['return_id']));
 	if (isset($_REQUEST['return_viewname'])) $smarty->assign("RETURN_VIEWNAME", vtlib_purify($_REQUEST['return_viewname']));
-	if (isset($isduplicate)) $smarty->assign("isDuplicate", $isduplicate);
+	if (isset($isduplicate))                 $smarty->assign("isDuplicate", $isduplicate);
 	$smarty->assign('ID', $record);
 	if (isset($_REQUEST['ciasset']) and !isset($_REQUEST['cirelto'])) {
 		$assetrs = $adb->pquery('select account from vtiger_assets where assetsid = ?',array($_REQUEST['ciasset']));
@@ -47,7 +39,6 @@ if (empty($cidwspinfo)) {
 	}
 	$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'GetPassword.tpl'));
 } else {
-
 	$rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
 	if (empty($rsps) or $adb->num_rows($rsps)==0) {
 		$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'ErrorPassword.tpl'));
@@ -93,22 +84,80 @@ if($isduplicate == 'true') {
 	$focus->id = '';
 	$focus->mode = '';
 }
-if(empty($_REQUEST['record']) && $focus->mode != 'edit'){
+$focus->preEditCheck($_REQUEST,$smarty);
+if (!empty($_REQUEST['save_error']) and $_REQUEST['save_error'] == "true") {
+	if (!empty($_REQUEST['encode_val'])) {
+		global $current_user;
+		$encode_val = vtlib_purify($_REQUEST['encode_val']);
+		$decode_val = base64_decode($encode_val);
+		$explode_decode_val = explode('&', trim($decode_val,'&'));
+		$tabid = getTabid($currentModule);
+		foreach ($explode_decode_val as $fieldvalue) {
+			$value = explode("=", $fieldvalue);
+			$field_name_val = $value[0];
+			$field_value =urldecode($value[1]);
+			$finfo = VTCacheUtils::lookupFieldInfo($tabid, $field_name_val);
+			if ($finfo !== false) {
+				switch ($finfo['uitype']) {
+					case '56':
+						$field_value = $field_value=='on' ? '1' : '0';
+						break;
+					case '7':
+					case '9':
+					case '72':
+						$field_value = CurrencyField::convertToDBFormat($field_value, null, true);
+						break;
+					case '71':
+						$field_value = CurrencyField::convertToDBFormat($field_value);
+						break;
+					case '33':
+					case '3313':
+					case '3314':
+						if (is_array($field_value)) {
+							$field_value = implode(' |##| ', $field_value);
+						}
+						break;
+				}
+			}
+			$focus->column_fields[$field_name_val] = $field_value;
+		}
+	}
+	$errormessageclass = isset($_REQUEST['error_msgclass']) ? vtlib_purify($_REQUEST['error_msgclass']) : '';
+	$errormessage = isset($_REQUEST['error_msg']) ? vtlib_purify($_REQUEST['error_msg']) : '';
+	$smarty->assign('ERROR_MESSAGE_CLASS', $errormessageclass);
+	$smarty->assign('ERROR_MESSAGE', $errormessage);
+} elseif($focus->mode != 'edit'){
 	setObjectValuesFromRequest($focus);
 }
-
+$smarty->assign('MASS_EDIT','0');
 $disp_view = getView($focus->mode);
-$smarty->assign('BLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields));
-$smarty->assign('BASBLOCKS', getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields, 'BAS'));
-$smarty->assign('ADVBLOCKS',getBlocks($currentModule,$disp_view,$focus->mode,$focus->column_fields,'ADV'));
+$blocks = getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields);
+$smarty->assign('BLOCKS', $blocks);
+$basblocks = getBlocks($currentModule, $disp_view, $focus->mode, $focus->column_fields, 'BAS');
+$smarty->assign('BASBLOCKS', $basblocks);
+$advblocks = getBlocks($currentModule,$disp_view,$focus->mode,$focus->column_fields,'ADV');
+$smarty->assign('ADVBLOCKS', $advblocks);
+
+$custom_blocks = getCustomBlocks($currentModule,$disp_view);
+$smarty->assign('CUSTOMBLOCKS', $custom_blocks);
+$smarty->assign('FIELDS',$focus->column_fields);
+
 $smarty->assign('OP_MODE',$disp_view);
+$smarty->assign('APP', $app_strings);
+$smarty->assign('MOD', $mod_strings);
+$smarty->assign('MODULE', $currentModule);
+$smarty->assign('SINGLE_MOD', 'SINGLE_'.$currentModule);
+$smarty->assign('CATEGORY', $category);
+$smarty->assign("THEME", $theme);
+$smarty->assign('IMAGE_PATH', "themes/$theme/images/");
 $smarty->assign('ID', $focus->id);
 $smarty->assign('MODE', $focus->mode);
+$smarty->assign('CREATEMODE', isset($_REQUEST['createmode']) ? vtlib_purify($_REQUEST['createmode']) : '');
 
 $smarty->assign('CHECK', Button_Check($currentModule));
 $smarty->assign('DUPLICATE', $isduplicate);
 
-if($focus->mode == 'edit' || $isduplicate) {
+if($focus->mode == 'edit' || $isduplicate == 'true') {
 	$recordName = array_values(getEntityName($currentModule, $record));
 	$recordName = $recordName[0];
 	$smarty->assign('NAME', $recordName);
@@ -119,6 +168,7 @@ if(isset($_REQUEST['return_module']))    $smarty->assign("RETURN_MODULE", vtlib_
 if(isset($_REQUEST['return_action']))    $smarty->assign("RETURN_ACTION", vtlib_purify($_REQUEST['return_action']));
 if(isset($_REQUEST['return_id']))        $smarty->assign("RETURN_ID", vtlib_purify($_REQUEST['return_id']));
 if (isset($_REQUEST['return_viewname'])) $smarty->assign("RETURN_VIEWNAME", vtlib_purify($_REQUEST['return_viewname']));
+$upload_maxsize = GlobalVariable::getVariable('Application_Upload_MaxSize',3000000,$currentModule);
 $smarty->assign("UPLOADSIZE", $upload_maxsize/1000000); //Convert to MB
 $smarty->assign("UPLOAD_MAXSIZE",$upload_maxsize);
 
@@ -161,7 +211,7 @@ if($focus->mode != 'edit' && $mod_seq_field != null) {
 $smarty->assign('FIELDHELPINFO', vtlib_getFieldHelpInfo($currentModule));
 
 $picklistDependencyDatasource = Vtiger_DependencyPicklist::getPicklistDependencyDatasource($currentModule);
-$smarty->assign("PICKIST_DEPENDENCY_DATASOURCE", Zend_Json::encode($picklistDependencyDatasource));
+$smarty->assign("PICKIST_DEPENDENCY_DATASOURCE", json_encode($picklistDependencyDatasource));
 
 $smarty->display(vtlib_getModuleTemplate('ConfidentialInfo','EditView.tpl'));
 }}}

@@ -11,9 +11,8 @@ global $currentModule;
 $modObj = CRMEntity::getInstance($currentModule);
 $ajaxaction = $_REQUEST["ajxaction"];
 if($ajaxaction == 'DETAILVIEW') {
-	$crmid = $_REQUEST['recordid'];
-	$tablename = $_REQUEST['tableName'];
-	$fieldname = $_REQUEST['fldName'];
+	$crmid = vtlib_purify($_REQUEST['recordid']);
+	$fieldname = vtlib_purify($_REQUEST['fldName']);
 	$fieldvalue = utf8RawUrlDecode($_REQUEST['fieldValue']);
 	if($crmid != '') {
 		$rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
@@ -32,17 +31,18 @@ if($ajaxaction == 'DETAILVIEW') {
 		$modObj->column_fields = $modObj->encryptFields($modObj->column_fields,$cidwspinfo);
 		$modObj->id = $crmid;
 		$modObj->mode = 'edit';
-		$modObj->save($currentModule);
-		if($modObj->id != '')
-		{
-			echo ':#:SUCCESS';
-		}else
-		{
-			echo ':#:FAILURE';
+		list($saveerror,$errormessage,$error_action,$returnvalues) = $modObj->preSaveCheck($_REQUEST);
+		if ($saveerror) { // there is an error so we report error
+			echo ':#:ERR'.$errormessage;
+		} else {
+			$modObj->save($currentModule);
+			if ($modObj->id != '') {
+				echo ':#:SUCCESS';
+			} else {
+				echo ':#:FAILURE';
+			}
 		}
-		}}   
-	}else
-	{
+	} else {
 		echo ':#:FAILURE';
 	}
 } elseif ($ajaxaction == "LOADRELATEDLIST" || $ajaxaction == "DISABLEMODULE") {
