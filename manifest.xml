@@ -33,7 +33,7 @@
 <table>
 <name>vtiger_confidentialinfo</name>
 <sql><![CDATA[CREATE TABLE `vtiger_confidentialinfo` (
-  `confidentialinfoid` int(11) DEFAULT NULL,
+  `confidentialinfoid` int(11) NOT NULL,
   `confidentialinfono` varchar(21) DEFAULT NULL,
   `cireference` varchar(150) DEFAULT NULL,
   `cicategory` varchar(100) DEFAULT NULL,
