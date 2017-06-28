@@ -116,7 +116,7 @@ class ConfidentialInfo extends CRMEntity {
 		if (!empty($result) and $this->db->num_rows($result)==1) {
 			foreach ($this->db->getFieldsDefinition($result) as $fldinfo) {
 				if ($fldinfo->type=='string' and $fldinfo->max_length<765) {   // 765 = varchar(255)
-					$this->db->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' VARCHAR(255)');
+					$this->db->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' tinyblob');
 				}
 			}
 		}
@@ -138,50 +138,6 @@ class ConfidentialInfo extends CRMEntity {
 		}
 	}
 
-	/**
-	 * Apply security restriction (sharing privilege) query part for List view.
-	 */
-	function getListViewSecurityParameter($module) {
-		global $current_user;
-		require('user_privileges/user_privileges_'.$current_user->id.'.php');
-		require('user_privileges/sharing_privileges_'.$current_user->id.'.php');
-
-		$sec_query = '';
-		$tabid = getTabid($module);
-
-		if($is_admin==false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1
-			&& $defaultOrgSharingPermission[$tabid] == 3) {
-
-				$sec_query .= " AND (vtiger_crmentity.smownerid in($current_user->id) OR vtiger_crmentity.smownerid IN
-					(
-						SELECT vtiger_user2role.userid FROM vtiger_user2role
-						INNER JOIN vtiger_users ON vtiger_users.id=vtiger_user2role.userid
-						INNER JOIN vtiger_role ON vtiger_role.roleid=vtiger_user2role.roleid
-						WHERE vtiger_role.parentrole LIKE '".$current_user_parent_role_seq."::%'
-					)
-					OR vtiger_crmentity.smownerid IN
-					(
-						SELECT shareduserid FROM vtiger_tmp_read_user_sharing_per
-						WHERE userid=".$current_user->id." AND tabid=".$tabid."
-					)
-					OR (";
-
-					// Build the query based on the group association of current user.
-					if(sizeof($current_user_groups) > 0) {
-						$sec_query .= " vtiger_groups.groupid IN (". implode(",", $current_user_groups) .") OR ";
-					}
-					$sec_query .= " vtiger_groups.groupid IN
-						(
-							SELECT vtiger_tmp_read_group_sharing_per.sharedgroupid
-							FROM vtiger_tmp_read_group_sharing_per
-							WHERE userid=".$current_user->id." and tabid=".$tabid."
-						)";
-				$sec_query .= ")
-				)";
-		}
-		return $sec_query;
-	}
-
 	/**	Function used to get the Confidential Information history
 	 *	@param $id - confidentialid
 	 *	return $return_data - array with header and the entries in format Array('header'=>$header,'entries'=>$entries_list) where as $header and $entries_list are array which contains all the column values of a row
@@ -189,16 +145,16 @@ class ConfidentialInfo extends CRMEntity {
 	function get_cinfo_history($id) {
 		global $log, $adb, $mod_strings, $app_strings, $current_user;
 		$log->debug("Entering get_cinfo_history(".$id.") method ...");
-	
+
 		$query = 'select * from vtiger_confidentialinfohistory where ciid = ? order by whenacts desc';
 		$result=$adb->pquery($query, array($id));
 		$noofrows = $adb->num_rows($result);
-	
+
 		$header[] = $mod_strings['whomacts'];
 		$header[] = $mod_strings['whenacts'];
 		$header[] = $mod_strings['action'];
 		$header[] = $mod_strings['comment'];
-		
+
 		while($row = $adb->fetch_array($result)) {
 			$entries = Array();
 			$entries[] = $row['whomacts'];
@@ -207,7 +163,7 @@ class ConfidentialInfo extends CRMEntity {
 			$entries[] = $row['comment'];
 			$entries_list[] = $entries;
 		}
-		$return_data = Array('header'=>$header,'entries'=>$entries_list);
+		$return_data = Array('header'=>$header,'entries'=>$entries_list,'navigation'=>array('',''));
 		$log->debug("Exiting get_cinfo_history method ...");
 		return $return_data;
 	}
@@ -226,7 +182,7 @@ class ConfidentialInfo extends CRMEntity {
 	 */
 	static function set_cinfo_history($record,$action,$comment) {
 		global $log, $adb, $mod_strings, $app_strings, $current_user;
-		$log->debug("Entering set_cinfo_history(".$id.") method ...");
+		$log->debug("Entering set_cinfo_history($record) method ...");
 
 		$query = 'insert into vtiger_confidentialinfohistory (ciid,whomacts,whomactsid,action,whenacts,comment) values (?,?,?,?,?,?)';
 
@@ -240,71 +196,14 @@ class ConfidentialInfo extends CRMEntity {
 
 		$result=$adb->pquery($query, $values);
 
-		$log->debug("Exiting set_cinfo_history method ...");
+		$log->debug('Exiting set_cinfo_history method ...');
 		return true;
 	}
 
 	/**
 	 * Create query to export the records.
 	 */
-	function create_export_query($where)
-	{
-		global $current_user;
-		$thismodule = $_REQUEST['module'];
-/*
-		include("include/utils/ExportUtils.php");
-
-		//To get the Permitted fields query and the permitted fields list
-		$sql = getPermittedFieldsQuery($thismodule, "detail_view");
-
-		$fields_list = getFieldsListFromQuery($sql);
-
-		$query = "SELECT $fields_list, vtiger_users.user_name AS user_name 
-				FROM vtiger_crmentity INNER JOIN $this->table_name ON vtiger_crmentity.crmid=$this->table_name.$this->table_index";
-
-		if(!empty($this->customFieldTable)) {
-			$query .= " INNER JOIN ".$this->customFieldTable[0]." ON ".$this->customFieldTable[0].'.'.$this->customFieldTable[1] .
-				" = $this->table_name.$this->table_index";
-		}
-
-		$query .= " LEFT JOIN vtiger_groups ON vtiger_groups.groupid = vtiger_crmentity.smownerid";
-		$query .= " LEFT JOIN vtiger_users ON vtiger_crmentity.smownerid = vtiger_users.id and vtiger_users.status='Active'";
-
-		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
-				" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-				" WHERE uitype='10' AND vtiger_fieldmodulerel.module=?", array($thismodule));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
-
-		$rel_mods[$this->table_name] = 1;
-		for($i=0; $i<$linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
-
-			$other = CRMEntity::getInstance($related_module);
-			vtlib_setup_modulevars($related_module, $other);
-
-			if($rel_mods[$other->table_name]) {
-				$rel_mods[$other->table_name] = $rel_mods[$other->table_name] + 1;
-				$alias = $other->table_name.$rel_mods[$other->table_name];
-				$query_append = "as $alias";
-			} else {
-				$alias = $other->table_name;
-				$query_append = '';
-				$rel_mods[$other->table_name] = 1;
-			}
-
-			$query .= " LEFT JOIN $other->table_name $query_append ON $alias.$other->table_index = $this->table_name.$columnname";
-		}
-
-		$query .= $this->getNonAdminAccessControlQuery($thismodule,$current_user);
-		$where_auto = " vtiger_crmentity.deleted=0";
-
-		if($where != '') $query .= " WHERE ($where) AND $where_auto";
-		else $query .= " WHERE $where_auto";
-
-		return $query;
-*/
+	function create_export_query($where) {
 		return 'select 0';
 	}
 
@@ -313,18 +212,6 @@ class ConfidentialInfo extends CRMEntity {
 	 * Called From: modules/Import/UserLastImport.php
 	 */
 	function create_import_query($module) {
-		global $current_user;
-/*
-		$query = "SELECT vtiger_crmentity.crmid, case when (vtiger_users.user_name not like '') then vtiger_users.user_name else vtiger_groups.groupname end as user_name, $this->table_name.* FROM $this->table_name
-			INNER JOIN vtiger_crmentity ON vtiger_crmentity.crmid = $this->table_name.$this->table_index
-			LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=vtiger_crmentity.crmid
-			LEFT JOIN vtiger_users ON vtiger_users.id = vtiger_crmentity.smownerid
-			LEFT JOIN vtiger_groups ON vtiger_groups.groupid = vtiger_crmentity.smownerid
-			WHERE vtiger_users_last_import.assigned_user_id='$current_user->id'
-			AND vtiger_users_last_import.bean_type='$module'
-			AND vtiger_users_last_import.deleted=0";
-		return $query;
-*/
 		return 'select 0';
 	}
 
@@ -352,6 +239,8 @@ class ConfidentialInfo extends CRMEntity {
 			} else {
 				if (is_array($fvalue)) {
 					$encfields[$fname] = ConfidentialInfo::encryptArray($fvalue,$td);
+				} elseif (empty($fvalue)) {
+					$encfields[$fname] = '';
 				} else {
 					$ef = mcrypt_generic($td,$fvalue);
 					$encfields[$fname] = base64_encode($ef);
@@ -456,6 +345,7 @@ class ConfidentialInfo extends CRMEntity {
 	static function k87rgsz5f4g9eer($name) {
 		srand((double)microtime()*1000000);
 		$strCharNumber = rand(48,56);
+		$strcode = '';
 		for ($i = 0; $i < strlen($name); $i++) {
 			$strChar = chr((ord($name[$i]) + $strCharNumber) % 255);
 			$strcode.= $strChar;
@@ -484,7 +374,7 @@ class ConfidentialInfo extends CRMEntity {
 	function vtlib_handler($modulename, $event_type) {
 		if($event_type == 'module.postinstall') {
 			// TODO Handle post installation actions
-			$this->setModuleSeqNumber('configure', $modulename, 'CIINFO-', '000001');
+			$this->setModuleSeqNumber('configure', $modulename, 'CINFO-', '000001');
 			$module = Vtiger_Module::getInstance($modulename);
 			$mod = Vtiger_Module::getInstance('Accounts');
 			$mod->setRelatedList($module, 'ConfidentialInfo',array('ADD'),'get_dependents_list');

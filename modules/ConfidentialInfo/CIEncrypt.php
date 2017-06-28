@@ -19,10 +19,10 @@
 *************************************************************************************************/
 global $mod_strings, $app_strings, $currentModule, $current_user, $theme, $singlepane_view;
 include_once 'modules/ConfidentialInfo/ConfidentialInfo.php';
-$cioldpass = vtlib_purify($_REQUEST['oldpassword']);
-$cinewpass = vtlib_purify($_REQUEST['newpassword']);
-$cireppass = vtlib_purify($_REQUEST['reppassword']);
-$cifirstrun = vtlib_purify($_REQUEST['cifirstrun']);
+$cioldpass = isset($_REQUEST['oldpassword']) ? vtlib_purify($_REQUEST['oldpassword']) : '';
+$cinewpass = isset($_REQUEST['newpassword']) ? vtlib_purify($_REQUEST['newpassword']) : '';
+$cireppass = isset($_REQUEST['reppassword']) ? vtlib_purify($_REQUEST['reppassword']) : '';
+$cifirstrun = isset($_REQUEST['cifirstrun']) ? vtlib_purify($_REQUEST['cifirstrun']) : '';
 if (!empty($cifirstrun) and $cinewpass==$cireppass) {
 	$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
 	$iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td),MCRYPT_RAND);

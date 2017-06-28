@@ -6,3 +6,10 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
+
+var oncinfodvajax = corebosjshook.around(window,'corebosjshook_dtlViewAjaxFinishSave_moredata',cinfodvajaxdata);
+function cinfodvajaxdata(callparams) {
+	var data = callparams.args[0]; // this is the detailviewajax data object
+	data.cidwspinfo = encodeURIComponent(document.getElementById('cidwspinfo').value);
+	return data;
+};

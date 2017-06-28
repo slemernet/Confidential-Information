@@ -24,9 +24,9 @@ $theme_path="themes/".$theme."/";
 $image_path=$theme_path."images/";
 $smarty = new vtigerCRM_Smarty();
 $smarty->assign('APP', $app_strings);
-$mod =  array_merge(
-		return_module_language($current_language,'ConfidentialInfo'),
-		return_module_language($current_language,'Settings'));
+$mod = array_merge(
+	return_module_language($current_language,'ConfidentialInfo'),
+	return_module_language($current_language,'Settings'));
 $smarty->assign("MOD", $mod);
 $smarty->assign("THEME",$theme);
 $smarty->assign("IMAGE_PATH",$image_path);
@@ -41,7 +41,7 @@ if ($adb->num_rows($rsps)==0) {
 	$smarty->assign('CIERROR','true');
 	$smarty->assign('CIERRORMSG',getTranslatedString('InitNotDoneError','ConfidentialInfo'));
 } elseif ($adb->num_rows($rsps)==1) {
-	$tovrequest = vtlib_purify($_REQUEST['timeoutval']);
+	$tovrequest = isset($_REQUEST['timeoutval']) ? vtlib_purify($_REQUEST['timeoutval']) : '';
 	if (!empty($tovrequest) and is_numeric($tovrequest)) {
 		$tovalue = $tovrequest;
 		$adb->pquery('update vtiger_cicryptinfo set timeout = ?',array($tovrequest));
@@ -49,6 +49,7 @@ if ($adb->num_rows($rsps)==0) {
 	} else {
 		$row = $adb->fetch_array($rsps);
 		$tovalue = $row['timeout'];
+		$smarty->assign('CIMessage','');
 	}
 	$smarty->assign('CIERROR','false');
 	$smarty->assign('CITimeout',$tovalue);

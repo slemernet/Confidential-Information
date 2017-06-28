@@ -24,9 +24,9 @@ $theme_path="themes/".$theme."/";
 $image_path=$theme_path."images/";
 $smarty = new vtigerCRM_Smarty();
 $smarty->assign('APP', $app_strings);
-$mod =  array_merge(
-		return_module_language($current_language,'ConfidentialInfo'),
-		return_module_language($current_language,'Settings'));
+$mod = array_merge(
+	return_module_language($current_language,'ConfidentialInfo'),
+	return_module_language($current_language,'Settings'));
 $smarty->assign("MOD", $mod);
 $smarty->assign("THEME",$theme);
 $smarty->assign("IMAGE_PATH",$image_path);
@@ -34,7 +34,7 @@ $smarty->assign("MODULE_NAME", 'ConfidentialInfo');
 $smarty->assign("MODULE_ICON", 'modules/ConfidentialInfo/lock.png');
 $smarty->assign("MODULE_TITLE", $mod['ChangePassword']);
 $smarty->assign("MODULE_Description", $mod['ChangePasswordDescription']);
-if ($passwderror) {
+if (isset($passwderror) and $passwderror) {
 	$smarty->assign("passwderror", 'true');
 }
 

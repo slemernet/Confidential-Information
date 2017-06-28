@@ -42,6 +42,8 @@ if($ajaxaction == 'DETAILVIEW') {
 				echo ':#:FAILURE';
 			}
 		}
+			}
+		}
 	} else {
 		echo ':#:FAILURE';
 	}

@@ -19,14 +19,15 @@
 *************************************************************************************************/
 
 $tool_buttons = array(
-'EditView' => 'yes',
-'index' => 'yes',
-'Import' => 'no',
-'Export' => 'no',
-'Merge' => 'no',
-'DuplicatesHandling' => 'no',
-'Calendar' => 'no',
-'moduleSettings' => 'yes',
+	'EditView' => 'yes',
+	'CreateView' => 'yes',
+	'index' => 'yes',
+	'Import' => 'no',
+	'Export' => 'no',
+	'Merge' => 'no',
+	'DuplicatesHandling' => 'no',
+	'Calendar' => 'no',
+	'moduleSettings' => 'yes',
 );
 
 ?>
