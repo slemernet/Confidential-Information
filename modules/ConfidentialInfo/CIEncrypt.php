@@ -22,10 +22,9 @@ include_once 'modules/ConfidentialInfo/ConfidentialInfo.php';
 $cioldpass = isset($_REQUEST['oldpassword']) ? vtlib_purify($_REQUEST['oldpassword']) : '';
 $cinewpass = isset($_REQUEST['newpassword']) ? vtlib_purify($_REQUEST['newpassword']) : '';
 $cireppass = isset($_REQUEST['reppassword']) ? vtlib_purify($_REQUEST['reppassword']) : '';
-$cifirstrun = isset($_REQUEST['cifirstrun']) ? vtlib_purify($_REQUEST['cifirstrun']) : '';
+$cifirstrun = isset($_REQUEST['cifirstrun']) ? vtlib_purify($_REQUEST['cifirstrun']) : false;
 if (!empty($cifirstrun) and $cinewpass==$cireppass) {
-	$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
-	$iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td),MCRYPT_RAND);
+	$iv = ConfidentialInfo::getNONCE();
 	$adb->pquery('insert into vtiger_cicryptinfo (`paswd`,`ciiv`,`lastchange`,`lastchangeby`,timeout) values (?,?,?,?,60)',array(
 		sha1($cinewpass),
 		$iv,
@@ -39,9 +38,7 @@ $passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
 if ($adb->num_rows($passrs)==1) {
 	$passinfo = $adb->fetch_array($passrs);
 	if (($passinfo['paswd']==sha1($cioldpass) or !empty($cifirstrun)) and $cinewpass==$cireppass) {
-		set_time_limit(0);
-		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
-		$iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td),MCRYPT_RAND);
+		$iv = ConfidentialInfo::getNONCE();
 		$adb->pquery('update vtiger_cicryptinfo set `paswd`=?,`ciiv`=?,`lastchange`=?,`lastchangeby`=?',array(
 			sha1($cinewpass),
 			bin2hex($iv),
@@ -49,80 +46,7 @@ if ($adb->num_rows($passrs)==1) {
 			getUserFullName($current_user->id)
 		));
 		if (empty($cifirstrun)) ConfidentialInfo::set_cinfo_history(0,'Password Change','Information encrypted');
-
-		$focus = CRMEntity::getInstance($currentModule);
-		
-		$fldrs = $adb->query('select fieldname,tablename from vtiger_field where tabid='.getTabid($currentModule));
-		
-		$wfldsmn = $wfldscf = array();
-		while ($fld = $adb->fetch_array($fldrs)) {
-			$fname = $fld['fieldname'];
-			if (!in_array($fname,ConfidentialInfo::$nonEncryptedFields) and ConfidentialInfo::isEncryptable($fname)) {
-				if ($fld['tablename']=='vtiger_confidentialinfo')
-					$wfldsmn[] = $fname;
-				else
-					$wfldscf[] = $fname;
-			}
-		}
-		$wfldsmncnt = count($wfldsmn);
-		$wfldscfcnt = count($wfldscf);
-		if ($wfldsmncnt+$wfldscfcnt>0) {
-			$cirs = $adb->query('select vtiger_confidentialinfo.confidentialinfoid,'.implode(',',$wfldsmn).implode(',',$wfldscf).'
-					from vtiger_confidentialinfo
-					inner join vtiger_confidentialinfocf on vtiger_confidentialinfo.confidentialinfoid=vtiger_confidentialinfocf.confidentialinfoid');
-			$ciupdmn = 'update vtiger_confidentialinfo set '.implode('=?,',$wfldsmn).'=? where confidentialinfoid=?';
-			$ciupdcf = 'update vtiger_confidentialinfocf set '.implode('=?,',$wfldscf).'=? where confidentialinfoid=?';
-			$cnt=0;
-			while ($ci = $adb->fetch_array($cirs)) {
-				$cifmn = $cifcf = $cifmnupd = $cifcfupd = array();
-				$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
-				$key = substr($cioldpass, 0, mcrypt_enc_get_key_size($td));
-				$ciiv = ConfidentialInfo::jejbs654sdf9s($passinfo['ciiv']);
-				mcrypt_generic_init($td, $key, $ciiv);
-				if ($wfldsmncnt>0) {
-					foreach ($wfldsmn as $fld) {
-						if (empty($cifirstrun))
-							$cifmn[$fld] = mdecrypt_generic($td,base64_decode($ci[$fld]));
-						else
-							$cifmn[$fld] = $ci[$fld];
-					}
-				}
-				if ($wfldscfcnt>0) {
-					foreach ($wfldscf as $fld) {
-						if (empty($cifirstrun))
-							$cifcf[$fld] = mdecrypt_generic($td,base64_decode($ci[$fld]));
-						else
-							$cifcf[$fld] = $ci[$fld];
-					}
-				}
-				mcrypt_generic_deinit($td);
-				mcrypt_module_close($td);
-				$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
-				$key = substr($cinewpass, 0, mcrypt_enc_get_key_size($td));
-				mcrypt_generic_init($td, $key, $iv);
-				if ($wfldsmncnt>0) {
-					foreach ($wfldsmn as $fld) {
-						$cifcryp = mcrypt_generic($td,$cifmn[$fld]);
-						$cifmnupd[] = base64_encode($cifcryp);
-					}
-					$cifmnupd[] = $ci['confidentialinfoid'];
-					$adb->pquery($ciupdmn,$cifmnupd);
-				}
-				if ($wfldscfcnt>0) {
-					foreach ($wfldscf as $fld) {
-						$cifcryp = mcrypt_generic($td,$cifcf[$fld]);
-						$cifcfupd[] = base64_encode($cifcryp);
-					}
-					$cifcfupd[] = $ci['confidentialinfoid'];
-					$adb->pquery($ciupdcf,$cifcfupd);
-				}
-				mcrypt_generic_deinit ($td);
-				mcrypt_module_close($td);
-				$cnt++;
-				if ($cnt % 10==0) echo ".";
-			}
-		}
-		$nrows = $adb->num_rows($cirs);
+		$nrows = ConfidentialInfo::migrate2NewPassword($cinewpass, $cioldpass, $passinfo['ciiv'], $cifirstrun);
 		echo "<br><h2>&nbsp;&nbsp;".getTranslatedString('PasswordChanged','ConfidentialInfo').(empty($nrows) ? '0':$nrows).'</h2>';
 		$passwderror = false;
 	}
