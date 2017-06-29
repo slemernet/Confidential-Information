@@ -62,6 +62,9 @@ $mod_strings = Array(
 	'InitNotDoneError' => 'Module initialization has not been done. Please set the encryption password first.',
 	'TimeoutValue' => 'Timeout (secs)',
 	'TimeoutValueUpdate' => '<span style="color:darkgreen">Timeout value updated.</span>',
+	'Loaded' => 'loaded',
+	'NotLoaded' => 'not loaded',
+	'encryptionMethod' => 'Encryption Method',
 );
 
 ?>

@@ -82,6 +82,24 @@ function set_password(form) {ldelim}
 <td width='40%' class='dvtCellLabel' nowrap>{$MOD.repeatpassword}</td><td width='60%' class='dvtCellInfo'><input type=password size=35 class='small' id='reppassword' name='reppassword'></td>
 </tr>
 <tr>
+<td width='40%' class='dvtCellLabel' nowrap>{$MOD.encryptionMethod}</td><td width='60%' class='dvtCellInfo'>
+<select class='small' id='cryptmethod' name='cryptmethod'>
+{if $MCRYPTLOADED}<option value="mcrypt" {$MCRYPTSELECTED}>mcrypt</option>{/if}
+{if $LIBSODIUMLOADED}<option value="libsodium" {$LIBSODIUMSELECTED}>libsodium</option>{/if}
+</select>
+{if $MCRYPTLOADED}
+<span style="color:darkgreen">mcrypt {'Loaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{else}
+<span style="color:red">mcrypt {'NotLoaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{/if}
+{if $LIBSODIUMLOADED}
+<span style="color:darkgreen">libsodium {'Loaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{else}
+<span style="color:red">libsodium {'NotLoaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{/if}
+</td>
+</tr>
+<tr>
 <td colspan=2 align="center"><input title="{$MOD.Encrypt}" accessKey="{$APP.LBL_EDIT_BUTTON_KEY}" class="crmbutton small edit" type="submit" name="encrypt" language=javascript onclick='if (!set_password(this.form)) return false;' value="&nbsp;{$MOD.Encrypt}&nbsp;">&nbsp;</td>
 </tr>
 </table>

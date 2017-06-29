@@ -23,6 +23,9 @@ $cioldpass = isset($_REQUEST['oldpassword']) ? vtlib_purify($_REQUEST['oldpasswo
 $cinewpass = isset($_REQUEST['newpassword']) ? vtlib_purify($_REQUEST['newpassword']) : '';
 $cireppass = isset($_REQUEST['reppassword']) ? vtlib_purify($_REQUEST['reppassword']) : '';
 $cifirstrun = isset($_REQUEST['cifirstrun']) ? vtlib_purify($_REQUEST['cifirstrun']) : false;
+$cryptmethod = isset($_REQUEST['cryptmethod']) ? vtlib_purify($_REQUEST['cryptmethod']) : 'mcrypt';
+$oldcryptmethod = coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt');
+coreBOS_Settings::setSetting('CINFO_EncryptMethod', $cryptmethod);
 if (!empty($cifirstrun) and $cinewpass==$cireppass) {
 	$iv = ConfidentialInfo::getNONCE();
 	$adb->pquery('insert into vtiger_cicryptinfo (`paswd`,`ciiv`,`lastchange`,`lastchangeby`,timeout) values (?,?,?,?,60)',array(
@@ -41,12 +44,12 @@ if ($adb->num_rows($passrs)==1) {
 		$iv = ConfidentialInfo::getNONCE();
 		$adb->pquery('update vtiger_cicryptinfo set `paswd`=?,`ciiv`=?,`lastchange`=?,`lastchangeby`=?',array(
 			sha1($cinewpass),
-			bin2hex($iv),
+			$iv,
 			date('Y-m-d'),
 			getUserFullName($current_user->id)
 		));
 		if (empty($cifirstrun)) ConfidentialInfo::set_cinfo_history(0,'Password Change','Information encrypted');
-		$nrows = ConfidentialInfo::migrate2NewPassword($cinewpass, $cioldpass, $passinfo['ciiv'], $cifirstrun);
+		$nrows = ConfidentialInfo::migrate2NewPassword($oldcryptmethod, $cinewpass, $cioldpass, $passinfo['ciiv'], $cifirstrun);
 		echo "<br><h2>&nbsp;&nbsp;".getTranslatedString('PasswordChanged','ConfidentialInfo').(empty($nrows) ? '0':$nrows).'</h2>';
 		$passwderror = false;
 	}

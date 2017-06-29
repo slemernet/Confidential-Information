@@ -36,7 +36,19 @@ $smarty->assign("MODULE_TITLE", $mod['ChangePassword']);
 $smarty->assign("MODULE_Description", $mod['ChangePasswordDescription']);
 if (isset($passwderror) and $passwderror) {
 	$smarty->assign("passwderror", 'true');
+} else {
+	$smarty->assign('passwderror', 'false');
 }
+
+if (coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt') == 'mcrypt') {
+	$smarty->assign('MCRYPTSELECTED','selected');
+	$smarty->assign('LIBSODIUMSELECTED','');
+} else {
+	$smarty->assign('MCRYPTSELECTED','');
+	$smarty->assign('LIBSODIUMSELECTED','selected');
+}
+$smarty->assign('MCRYPTLOADED',extension_loaded('mcrypt'));
+$smarty->assign('LIBSODIUMLOADED',extension_loaded('libsodium'));
 
 $rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
 
