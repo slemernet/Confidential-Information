@@ -25,7 +25,6 @@ $cireppass = isset($_REQUEST['reppassword']) ? vtlib_purify($_REQUEST['reppasswo
 $cifirstrun = isset($_REQUEST['cifirstrun']) ? vtlib_purify($_REQUEST['cifirstrun']) : false;
 $cryptmethod = isset($_REQUEST['cryptmethod']) ? vtlib_purify($_REQUEST['cryptmethod']) : 'mcrypt';
 $oldcryptmethod = coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt');
-coreBOS_Settings::setSetting('CINFO_EncryptMethod', $cryptmethod);
 if (!empty($cifirstrun) and $cinewpass==$cireppass) {
 	$iv = ConfidentialInfo::getNONCE();
 	$adb->pquery('insert into vtiger_cicryptinfo (`paswd`,`ciiv`,`lastchange`,`lastchangeby`,timeout) values (?,?,?,?,60)',array(
@@ -34,6 +33,7 @@ if (!empty($cifirstrun) and $cinewpass==$cireppass) {
 		date('Y-m-d'),
 		getUserFullName($current_user->id)
 	));
+	coreBOS_Settings::setSetting('CINFO_EncryptMethod', $cryptmethod);
 	ConfidentialInfo::set_cinfo_history(0,'Initial Encryption','');
 }
 $passwderror = true;
@@ -41,6 +41,7 @@ $passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
 if ($adb->num_rows($passrs)==1) {
 	$passinfo = $adb->fetch_array($passrs);
 	if (($passinfo['paswd']==sha1($cioldpass) or !empty($cifirstrun)) and $cinewpass==$cireppass) {
+		coreBOS_Settings::setSetting('CINFO_EncryptMethod', $cryptmethod);
 		$iv = ConfidentialInfo::getNONCE();
 		$adb->pquery('update vtiger_cicryptinfo set `paswd`=?,`ciiv`=?,`lastchange`=?,`lastchangeby`=?',array(
 			sha1($cinewpass),

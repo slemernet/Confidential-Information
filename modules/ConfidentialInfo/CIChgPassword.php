@@ -39,16 +39,23 @@ if (isset($passwderror) and $passwderror) {
 } else {
 	$smarty->assign('passwderror', 'false');
 }
-
-if (coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt') == 'mcrypt') {
+$cmethod = coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt');
+if ($cmethod == 'mcrypt') {
 	$smarty->assign('MCRYPTSELECTED','selected');
 	$smarty->assign('LIBSODIUMSELECTED','');
+	$smarty->assign('OPENSSLSELECTED','');
+} elseif ($cmethod == 'openssl') {
+	$smarty->assign('MCRYPTSELECTED','');
+	$smarty->assign('LIBSODIUMSELECTED','');
+	$smarty->assign('OPENSSLSELECTED','selected');
 } else {
 	$smarty->assign('MCRYPTSELECTED','');
 	$smarty->assign('LIBSODIUMSELECTED','selected');
+	$smarty->assign('OPENSSLSELECTED','');
 }
 $smarty->assign('MCRYPTLOADED',extension_loaded('mcrypt'));
 $smarty->assign('LIBSODIUMLOADED',extension_loaded('libsodium'));
+$smarty->assign('OPENSSLLOADED',extension_loaded('openssl'));
 
 $rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
 

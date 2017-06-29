@@ -85,6 +85,7 @@ function set_password(form) {ldelim}
 <td width='40%' class='dvtCellLabel' nowrap>{$MOD.encryptionMethod}</td><td width='60%' class='dvtCellInfo'>
 <select class='small' id='cryptmethod' name='cryptmethod'>
 {if $MCRYPTLOADED}<option value="mcrypt" {$MCRYPTSELECTED}>mcrypt</option>{/if}
+{if $OPENSSLLOADED}<option value="openssl" {$OPENSSLSELECTED}>openssl</option>{/if}
 {if $LIBSODIUMLOADED}<option value="libsodium" {$LIBSODIUMSELECTED}>libsodium</option>{/if}
 </select>
 {if $MCRYPTLOADED}
@@ -96,6 +97,11 @@ function set_password(form) {ldelim}
 <span style="color:darkgreen">libsodium {'Loaded'|@getTranslatedString:$MODULE_NAME}.</span>
 {else}
 <span style="color:red">libsodium {'NotLoaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{/if}
+{if $OPENSSLLOADED}
+<span style="color:darkgreen">openssl {'Loaded'|@getTranslatedString:$MODULE_NAME}.</span>
+{else}
+<span style="color:red">openssl {'NotLoaded'|@getTranslatedString:$MODULE_NAME}.</span>
 {/if}
 </td>
 </tr>

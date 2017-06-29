@@ -249,7 +249,7 @@ class ConfidentialInfo extends CRMEntity {
 				return ConfidentialInfo::encryptFields_libsodium($fields,$passwd,$passinfo['ciiv']);
 			break;
 			case 'openssl':
-			;
+				return ConfidentialInfo::encryptFields_openssl($fields,$passwd,$passinfo['ciiv']);
 			break;
 			case 'mcrypt':
 			default:
@@ -280,7 +280,7 @@ class ConfidentialInfo extends CRMEntity {
 				return ConfidentialInfo::decryptFields_libsodium($fields,$passwd,$nonce);
 			break;
 			case 'openssl':
-			;
+				return ConfidentialInfo::decryptFields_openssl($fields,$passwd,$nonce);
 			break;
 			case 'mcrypt':
 			default:
@@ -299,7 +299,7 @@ class ConfidentialInfo extends CRMEntity {
 				return substr(bin2hex(\Sodium\randombytes_buf(\Sodium\CRYPTO_SECRETBOX_NONCEBYTES)),0,\Sodium\CRYPTO_SECRETBOX_NONCEBYTES);
 			break;
 			case 'openssl':
-			;
+				return substr(bin2hex(random_bytes(16)),0,16);
 			break;
 			case 'mcrypt':
 			default:
@@ -380,6 +380,36 @@ class ConfidentialInfo extends CRMEntity {
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
 			$encfields[$fname] = \Sodium\crypto_secretbox($fvalue, $nonce, $key);
+		}
+		return $encfields;
+	}
+
+
+	public static function encryptFields_openssl($fields,$passwd,$nonce) {
+		global $log;
+		$key = substr(sha1($passwd),0,16);
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+				$encfields[$fname] = $fvalue;
+			} else {
+				if (is_array($fvalue)) {
+					$encfields[$fname] = ConfidentialInfo::encryptArray_openssl($fvalue, $nonce, $key);
+				} elseif (empty($fvalue)) {
+					$encfields[$fname] = '';
+				} else {
+					$encfields[$fname] = openssl_encrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
+				}
+			}
+		}
+		return $encfields;
+	}
+
+	static function encryptArray_openssl($fields, $nonce, $key) {
+		global $log;
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			$encfields[$fname] = openssl_encrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
 		}
 		return $encfields;
 	}
@@ -504,6 +534,35 @@ class ConfidentialInfo extends CRMEntity {
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
 			$encfields[$fname] = \Sodium\crypto_secretbox_open($fvalue, $nonce, $key);
+		}
+		return $encfields;
+	}
+
+	static function decryptFields_openssl($fields,$passwd,$nonce) {
+		global $log;
+		$key = substr(sha1($passwd),0,16);
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+				$encfields[$fname] = $fvalue;
+			} else {
+				if (strpos($fvalue,' |##| ')>0) {
+					$valueArr = explode(' |##| ', $fvalue);
+					$decflds = ConfidentialInfo::decryptArray_openssl($valueArr,  $nonce, $key);
+					$encfields[$fname] = implode(' |##| ', $decflds);
+				} else {
+					$encfields[$fname] = openssl_decrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
+				}
+			}
+		}
+		return $encfields;
+	}
+
+	static function decryptArray_openssl($fields, $nonce, $key) {
+		global $log;
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			$encfields[$fname] = openssl_decrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
 		}
 		return $encfields;
 	}
