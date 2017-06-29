@@ -17,6 +17,10 @@ $smarty->assign('CUSTOM_MODULE', $focus->IsCustomModule);
 
 $category = getParentTab($currentModule);
 $record = isset($_REQUEST['record']) ? vtlib_purify($_REQUEST['record']) : null;
+if($record) {
+	$focus->id = $record;
+	$focus->mode = 'edit';
+}
 $isduplicate = isset($_REQUEST['isDuplicate']) ? vtlib_purify($_REQUEST['isDuplicate']) : null;
 $smarty->assign('APP', $app_strings);
 $smarty->assign('MOD', $mod_strings);
