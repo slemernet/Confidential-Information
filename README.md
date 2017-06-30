@@ -29,3 +29,8 @@ Extension to safely store sensitive information. Data will be encrypted and only
 
 [**Support forum**](http://discussions.corebos.org/)
 
+Confidential Information
+======
+This extension now supports libsodium and openssl encryption and requires PHP7
+
+If you are currently using this module and are looking to upgrade **contact me first**. I will help you migrate your current information. I have not tested applying the new code on existing records so, just in case, let me have a look first.
