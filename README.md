@@ -29,7 +29,7 @@ Extension to safely store sensitive information. Data will be encrypted and only
 
 [**Support forum**](http://discussions.corebos.org/)
 
-Confidential Information
+PHP7 version with Libsodium and openssl
 ======
 This extension now supports libsodium and openssl encryption and requires PHP7
 
