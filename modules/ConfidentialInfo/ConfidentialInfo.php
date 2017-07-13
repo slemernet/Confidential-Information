@@ -252,7 +252,28 @@ class ConfidentialInfo extends CRMEntity {
 				return ConfidentialInfo::encryptFields_openssl($fields,$passwd,$passinfo['ciiv']);
 			break;
 			case 'pki':
-				return ConfidentialInfo::encryptFields_pki($fields,'file://'.$passinfo['ciiv'].'/public.key');
+				$privatekey = $passinfo['ciiv'].'/private.key';
+				if (file_exists($privatekey) or empty($_REQUEST['mode'])) {
+					return ConfidentialInfo::encryptFields_pki($fields,'file://'.$passinfo['ciiv'].'/public.key');
+				} elseif (!empty($_REQUEST['mode']) and !empty($_REQUEST['record'])) {
+					$result = $adb->pquery('select *
+						from vtiger_confidentialinfo
+						inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid
+						where vtiger_confidentialinfo.confidentialinfoid=?',array($_REQUEST['record']));
+					if (!empty($result) and $adb->num_rows($result)==1) {
+						$row = $adb->raw_query_result_rowdata($result);
+						foreach ($adb->getFieldsDefinition($result) as $fldinfo) {
+							if ($fldinfo->type=='252') { // blob > so we undo html_encode comming from peardatabase
+								$fields[$fldinfo->name] = $row[$fldinfo->name];
+							}
+						}
+						return $fields;
+					} else {
+						return $fields;
+					}
+				} else {
+					return $fields;
+				}
 			break;
 			case 'mcrypt':
 			default:
