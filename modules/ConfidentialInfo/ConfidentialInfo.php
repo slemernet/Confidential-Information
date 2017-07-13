@@ -113,10 +113,10 @@ class ConfidentialInfo extends CRMEntity {
 	function __construct() {
 		parent::__construct();
 		$result = $this->db->query('select * from vtiger_confidentialinfocf limit 1');
-		if (!empty($result) and $this->db->num_rows($result)==1) {
+		if (!empty($result)) {
 			foreach ($this->db->getFieldsDefinition($result) as $fldinfo) {
 				if ($fldinfo->type=='253') {
-					$this->db->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' tinyblob');
+					$this->db->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' blob');
 				}
 			}
 		}
@@ -131,7 +131,7 @@ class ConfidentialInfo extends CRMEntity {
 		if (!empty($result) and $this->db->num_rows($result)==1) {
 			$row = $this->db->raw_query_result_rowdata($result);
 			foreach ($this->db->getFieldsDefinition($result) as $fldinfo) {
-				if ($fldinfo->type=='252') { // tinyblob
+				if ($fldinfo->type=='252') { // blob > so we undo html_encode comming from peardatabase
 					$this->column_fields[$fldinfo->name] = $row[$fldinfo->name];
 				}
 			}
