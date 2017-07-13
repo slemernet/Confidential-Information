@@ -85,7 +85,10 @@ function set_password(form) {ldelim}
 <td width='40%' class='dvtCellLabel' nowrap>{$MOD.encryptionMethod}</td><td width='60%' class='dvtCellInfo'>
 <select class='small' id='cryptmethod' name='cryptmethod'>
 {if $MCRYPTLOADED}<option value="mcrypt" {$MCRYPTSELECTED}>mcrypt</option>{/if}
-{if $OPENSSLLOADED}<option value="openssl" {$OPENSSLSELECTED}>openssl</option>{/if}
+{if $OPENSSLLOADED}
+<option value="openssl" {$OPENSSLSELECTED}>openssl</option>
+<option value="pki" {$OPENSSLPKISELECTED}>openssl pki</option>
+{/if}
 {if $LIBSODIUMLOADED}<option value="libsodium" {$LIBSODIUMSELECTED}>libsodium</option>{/if}
 </select>
 {if $MCRYPTLOADED}
@@ -104,6 +107,9 @@ function set_password(form) {ldelim}
 <span style="color:red">openssl {'NotLoaded'|@getTranslatedString:$MODULE_NAME}.</span>
 {/if}
 </td>
+</tr>
+<tr>
+<td width='40%' class='dvtCellLabel' nowrap>{$MOD.PKIKeyDirectory}</td><td width='60%' class='dvtCellInfo'><input type="text" class='' id='pkidir' name='pkidir' value="{$PKIKEYDIR}"></td>
 </tr>
 <tr>
 <td colspan=2 align="center"><input title="{$MOD.Encrypt}" accessKey="{$APP.LBL_EDIT_BUTTON_KEY}" class="crmbutton small edit" type="submit" name="encrypt" language=javascript onclick='if (!set_password(this.form)) return false;' value="&nbsp;{$MOD.Encrypt}&nbsp;">&nbsp;</td>

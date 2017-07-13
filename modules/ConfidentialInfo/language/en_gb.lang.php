@@ -65,6 +65,7 @@ $mod_strings = Array(
 	'Loaded' => 'loaded',
 	'NotLoaded' => 'not loaded',
 	'encryptionMethod' => 'Encryption Method',
+	'PKIKeyDirectory' => 'PKI Key Directory',
 );
 
 ?>

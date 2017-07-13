@@ -44,21 +44,29 @@ if ($cmethod == 'mcrypt') {
 	$smarty->assign('MCRYPTSELECTED','selected');
 	$smarty->assign('LIBSODIUMSELECTED','');
 	$smarty->assign('OPENSSLSELECTED','');
+	$smarty->assign('OPENSSLPKISELECTED','');
 } elseif ($cmethod == 'openssl') {
 	$smarty->assign('MCRYPTSELECTED','');
 	$smarty->assign('LIBSODIUMSELECTED','');
 	$smarty->assign('OPENSSLSELECTED','selected');
+	$smarty->assign('OPENSSLPKISELECTED','');
+} elseif ($cmethod == 'pki') {
+	$smarty->assign('MCRYPTSELECTED','');
+	$smarty->assign('LIBSODIUMSELECTED','');
+	$smarty->assign('OPENSSLSELECTED','selected');
+	$smarty->assign('OPENSSLPKISELECTED','selected');
 } else {
 	$smarty->assign('MCRYPTSELECTED','');
 	$smarty->assign('LIBSODIUMSELECTED','selected');
 	$smarty->assign('OPENSSLSELECTED','');
+	$smarty->assign('OPENSSLPKISELECTED','');
 }
 $smarty->assign('MCRYPTLOADED',extension_loaded('mcrypt'));
 $smarty->assign('LIBSODIUMLOADED',extension_loaded('libsodium'));
 $smarty->assign('OPENSSLLOADED',extension_loaded('openssl'));
 
 $rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
-
+$smarty->assign('PKIKEYDIR','');
 if ($adb->num_rows($rsps)==0) {
 	$smarty->assign('CIERROR','false');
 	$smarty->assign('CIFIRSTRUN','true');
@@ -68,6 +76,7 @@ if ($adb->num_rows($rsps)==0) {
 	$smarty->assign('CIFIRSTRUN','false');
 	$smarty->assign('CILastChangedOn',DateTimeField::convertToUserFormat($row['lastchange']));
 	$smarty->assign('CILastChangedBy',$row['lastchangeby']);
+	$smarty->assign('PKIKEYDIR',$row['ciiv']);
 } else {
 	$smarty->assign('CIERROR','true');
 	$smarty->assign('CIERRORMSG',getTranslatedString('DBInfoError','ConfidentialInfo'));

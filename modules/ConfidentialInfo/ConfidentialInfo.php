@@ -251,6 +251,9 @@ class ConfidentialInfo extends CRMEntity {
 			case 'openssl':
 				return ConfidentialInfo::encryptFields_openssl($fields,$passwd,$passinfo['ciiv']);
 			break;
+			case 'pki':
+				return ConfidentialInfo::encryptFields_pki($fields,'file://'.$passinfo['ciiv'].'/public.key');
+			break;
 			case 'mcrypt':
 			default:
 				return ConfidentialInfo::encryptFields_mcrypt($fields,$passwd,$passinfo['ciiv']);
@@ -282,6 +285,9 @@ class ConfidentialInfo extends CRMEntity {
 			case 'openssl':
 				return ConfidentialInfo::decryptFields_openssl($fields,$passwd,$nonce);
 			break;
+			case 'pki':
+				return ConfidentialInfo::decryptFields_pki($fields,'file://'.$adb->query_result($passrs, 0, 'ciiv').'/private.key');
+			break;
 			case 'mcrypt':
 			default:
 				return ConfidentialInfo::decryptFields_mcrypt($fields,$passwd,$nonce);
@@ -300,6 +306,9 @@ class ConfidentialInfo extends CRMEntity {
 			break;
 			case 'openssl':
 				return substr(bin2hex(random_bytes(16)),0,16);
+			break;
+			case 'pki':
+				return (empty($_REQUEST['pkidir']) ? 'modules/ConfidentialInfo' : vtlib_purify($_REQUEST['pkidir']));
 			break;
 			case 'mcrypt':
 			default:
@@ -384,6 +393,38 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
+	public static function encryptFields_pki($fields,$publickey) {
+		global $log;
+		// Get the public Key of the recipient
+		$key = openssl_pkey_get_public($publickey);
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+				$encfields[$fname] = $fvalue;
+			} else {
+				if (is_array($fvalue)) {
+					$encfields[$fname] = ConfidentialInfo::encryptArray_pki($fvalue, $key);
+				} elseif (empty($fvalue)) {
+					$encfields[$fname] = '';
+				} else {
+					openssl_public_encrypt($fvalue, $encrypted, $key);
+					$encfields[$fname] = $encrypted;
+				}
+			}
+		}
+		openssl_free_key($key);
+		return $encfields;
+	}
+
+	static function encryptArray_pki($fields, $key) {
+		global $log;
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			openssl_public_encrypt($fvalue, $encrypted, $key);
+			$encfields[$fname] = $encrypted;
+		}
+		return $encfields;
+	}
 
 	public static function encryptFields_openssl($fields,$passwd,$nonce) {
 		global $log;
@@ -534,6 +575,43 @@ class ConfidentialInfo extends CRMEntity {
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
 			$encfields[$fname] = \Sodium\crypto_secretbox_open($fvalue, $nonce, $key);
+		}
+		return $encfields;
+	}
+
+	static function decryptFields_pki($fields,$privatekey) {
+		global $log;
+		// Get the private Key
+		$key = openssl_pkey_get_private($privatekey);
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+				$encfields[$fname] = $fvalue;
+			} else {
+				if ($key === false) {
+					$encfields[$fname] = '';
+				} else {
+					if (strpos($fvalue,' |##| ')>0) {
+						$valueArr = explode(' |##| ', $fvalue);
+						$decflds = ConfidentialInfo::decryptArray_pki($valueArr, $key);
+						$encfields[$fname] = implode(' |##| ', $decflds);
+					} else {
+						openssl_private_decrypt($fvalue, $decrypted, $key);
+						$encfields[$fname] = $decrypted;
+					}
+				}
+			}
+		}
+		if ($key) openssl_free_key($key);
+		return $encfields;
+	}
+
+	static function decryptArray_pki($fields, $key) {
+		global $log;
+		$encfields = array();
+		foreach ($fields as $fname=>$fvalue) {
+			openssl_private_decrypt($fvalue, $decrypted, $key);
+			$encfields[$fname] = $decrypted;
 		}
 		return $encfields;
 	}
