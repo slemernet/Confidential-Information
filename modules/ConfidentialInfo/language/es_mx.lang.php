@@ -8,7 +8,7 @@
  * All Rights Reserved.
  ************************************************************************************/
 
-$mod_strings = Array(
+$mod_strings = array(
 	'ConfidentialInfo' => 'Información Confidencial',
 	'SINGLE_ConfidentialInfo' => 'Información Confidencial',
 	'ConfidentialInfo ID' => 'ID IC',

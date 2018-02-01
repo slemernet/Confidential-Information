@@ -7,74 +7,76 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
-require_once('data/CRMEntity.php');
-require_once('data/Tracker.php');
+require_once 'data/CRMEntity.php';
+require_once 'data/Tracker.php';
 
 class ConfidentialInfo extends CRMEntity {
-	var $db, $log; // Used in class functions of CRMEntity
+	public $db;
+	public $log;
 
-	var $table_name = 'vtiger_confidentialinfo';
-	var $table_index= 'confidentialinfoid';
-	var $column_fields = Array();
+	public $table_name = 'vtiger_confidentialinfo';
+	public $table_index= 'confidentialinfoid';
+	public $column_fields = array();
 
 	/** Indicator if this is a custom module or standard module */
-	var $IsCustomModule = true;
-	var $HasDirectImageField = false;
+	public $IsCustomModule = true;
+	public $HasDirectImageField = false;
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	var $customFieldTable = Array('vtiger_confidentialinfocf', 'confidentialinfoid');
+	public $customFieldTable = array('vtiger_confidentialinfocf', 'confidentialinfoid');
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	var $tab_name = Array('vtiger_crmentity', 'vtiger_confidentialinfo', 'vtiger_confidentialinfocf');
+	public $tab_name = array('vtiger_crmentity', 'vtiger_confidentialinfo', 'vtiger_confidentialinfocf');
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	var $tab_name_index = Array(
+	public $tab_name_index = array(
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_confidentialinfo'   => 'confidentialinfoid',
-		'vtiger_confidentialinfocf' => 'confidentialinfoid');
+		'vtiger_confidentialinfocf' => 'confidentialinfoid',
+	);
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	var $list_fields = Array (
-		/* Format: Field Label => Array(tablename => columnname) */
+	public $list_fields = array (
+		/* Format: Field Label => array(tablename => columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'confidentialinfono' => Array('confidentialinfo' => 'confidentialinfono'),
-		'cireference' => Array('confidentialinfo' => 'cireference'),
-		'cicategory' => Array('confidentialinfo' => 'cicategory'),
-		'cirelto' => Array('confidentialinfo' => 'cirelto'),
-		'ciasset' => Array('confidentialinfo' => 'ciasset'),
-		'Assigned To' => Array('crmentity' =>'smownerid')
+		'confidentialinfono' => array('confidentialinfo' => 'confidentialinfono'),
+		'cireference' => array('confidentialinfo' => 'cireference'),
+		'cicategory' => array('confidentialinfo' => 'cicategory'),
+		'cirelto' => array('confidentialinfo' => 'cirelto'),
+		'ciasset' => array('confidentialinfo' => 'ciasset'),
+		'Assigned To' => array('crmentity' =>'smownerid'),
 	);
-	var $list_fields_name = Array(
+	public $list_fields_name = array(
 		/* Format: Field Label => fieldname */
 		'confidentialinfono' => 'confidentialinfono',
 		'cireference' => 'cireference',
 		'cicategory' => 'cicategory',
 		'cirelto' => 'cirelto',
 		'ciasset' => 'ciasset',
-		'Assigned To' => 'assigned_user_id'
+		'Assigned To' => 'assigned_user_id',
 	);
 
 	// Make the field link to detail view from list view (Fieldname)
-	var $list_link_field = 'confidentialinfono';
+	public $list_link_field = 'confidentialinfono';
 
 	// For Popup listview and UI type support
-	var $search_fields = Array(
-		/* Format: Field Label => Array(tablename => columnname) */
+	public $search_fields = array(
+		/* Format: Field Label => array(tablename => columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'confidentialinfono' => Array('confidentialinfo' => 'confidentialinfono'),
-		'cireference' => Array('confidentialinfo' => 'cireference'),
-		'cicategory' => Array('confidentialinfo' => 'cicategory'),
-		'cirelto' => Array('confidentialinfo' => 'cirelto'),
-		'ciasset' => Array('confidentialinfo' => 'ciasset'),
+		'confidentialinfono' => array('confidentialinfo' => 'confidentialinfono'),
+		'cireference' => array('confidentialinfo' => 'cireference'),
+		'cicategory' => array('confidentialinfo' => 'cicategory'),
+		'cirelto' => array('confidentialinfo' => 'cirelto'),
+		'ciasset' => array('confidentialinfo' => 'ciasset'),
 	);
-	var $search_fields_name = Array(
+	public $search_fields_name = array(
 		/* Format: Field Label => fieldname */
 		'confidentialinfono' => 'confidentialinfono',
 		'cireference' => 'cireference',
@@ -84,33 +86,33 @@ class ConfidentialInfo extends CRMEntity {
 	);
 
 	// For Popup window record selection
-	var $popup_fields = Array('cireference');
+	public $popup_fields = array('cireference');
 
 	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	var $sortby_fields = Array();
+	public $sortby_fields = array();
 
 	// For Alphabetical search
-	var $def_basicsearch_col = 'cireference';
+	public $def_basicsearch_col = 'cireference';
 
 	// Column value to use on detail view record text display
-	var $def_detailview_recname = 'cireference';
+	public $def_detailview_recname = 'cireference';
 
 	// Required Information for enabling Import feature
-	var $required_fields = Array('refto'=>1);
+	public $required_fields = array('refto'=>1);
 
 	// Callback function list during Importing
-	var $special_functions = Array('set_import_assigned_user');
+	public $special_functions = array('set_import_assigned_user');
 
-	var $default_order_by = 'cireference';
-	var $default_sort_order='ASC';
+	public $default_order_by = 'cireference';
+	public $default_sort_order='ASC';
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	var $mandatory_fields = Array('createdtime', 'modifiedtime', 'cireference');
+	public $mandatory_fields = array('createdtime', 'modifiedtime', 'cireference');
 
 	// List of fields that will not be encrypted
 	static $nonEncryptedFields = array('confidentialinfoid','confidentialinfono','cireference','cicategory','cirelto','ciasset','description','record_id','record_module');
 
-	function __construct() {
+	public function __construct() {
 		parent::__construct();
 		$result = $this->db->query('select * from vtiger_confidentialinfocf limit 1');
 		if (!empty($result)) {
@@ -122,7 +124,7 @@ class ConfidentialInfo extends CRMEntity {
 		}
 	}
 
-	function retrieve_entity_info($record, $module, $deleted=false) {
+	public function retrieve_entity_info($record, $module, $deleted=false) {
 		parent::retrieve_entity_info($record, $module, $deleted);
 		$result = $this->db->pquery('select *
 			from vtiger_confidentialinfo
@@ -138,14 +140,14 @@ class ConfidentialInfo extends CRMEntity {
 		}
 	}
 
-	function trash($module, $record) {
+	public function trash($module, $record) {
 		$this->set_cinfo_history($record,'delete','');
 		parent::trash($module, $record);
 	}
 
-	function save_module($module) {
+	public function save_module($module) {
 		if ($this->HasDirectImageField) {
-			$this->insertIntoAttachment($this->id,$module);
+			$this->insertIntoAttachment($this->id, $module);
 		}
 		if (empty($this->mode)) {
 			$this->set_cinfo_history($this->id,'create','');
@@ -156,9 +158,9 @@ class ConfidentialInfo extends CRMEntity {
 
 	/**	Function used to get the Confidential Information history
 	 *	@param $id - confidentialid
-	 *	return $return_data - array with header and the entries in format Array('header'=>$header,'entries'=>$entries_list) where as $header and $entries_list are array which contains all the column values of a row
+	 *	return $return_data - array with header and the entries in format array('header'=>$header,'entries'=>$entries_list) where as $header and $entries_list are array which contains all the column values of a row
 	 */
-	function get_cinfo_history($id) {
+	public function get_cinfo_history($id) {
 		global $log, $adb, $mod_strings, $app_strings, $current_user;
 		$log->debug("Entering get_cinfo_history(".$id.") method ...");
 
@@ -172,14 +174,14 @@ class ConfidentialInfo extends CRMEntity {
 		$header[] = $mod_strings['comment'];
 
 		while($row = $adb->fetch_array($result)) {
-			$entries = Array();
+			$entries = array();
 			$entries[] = $row['whomacts'];
 			$entries[] = DateTimeField::convertToUserFormat($row['whenacts']);
 			$entries[] = getTranslatedString($row['action'],'ConfidentialInfo');
 			$entries[] = $row['comment'];
 			$entries_list[] = $entries;
 		}
-		$return_data = Array('header'=>$header,'entries'=>$entries_list,'navigation'=>array('',''));
+		$return_data = array('header'=>$header,'entries'=>$entries_list,'navigation'=>array('',''));
 		$log->debug("Exiting get_cinfo_history method ...");
 		return $return_data;
 	}
@@ -196,7 +198,7 @@ class ConfidentialInfo extends CRMEntity {
 	 *  @param $comment - comment to add to the log
 	 *	return true
 	 */
-	static function set_cinfo_history($record,$action,$comment) {
+	public static function set_cinfo_history($record,$action,$comment) {
 		global $log, $adb, $mod_strings, $app_strings, $current_user;
 		$log->debug("Entering set_cinfo_history($record) method ...");
 
@@ -219,7 +221,7 @@ class ConfidentialInfo extends CRMEntity {
 	/**
 	 * Create query to export the records.
 	 */
-	function create_export_query($where) {
+	public function create_export_query($where) {
 		return 'select 0';
 	}
 
@@ -227,7 +229,7 @@ class ConfidentialInfo extends CRMEntity {
 	 * Create list query to be shown at the last step of the import.
 	 * Called From: modules/Import/UserLastImport.php
 	 */
-	function create_import_query($module) {
+	public function create_import_query($module) {
 		return 'select 0';
 	}
 
@@ -237,7 +239,7 @@ class ConfidentialInfo extends CRMEntity {
 	 * @param passwd, the current company wide password
 	 * @returns the same array with values it can encrypt encrypted
 	 */
-	static function encryptFields($fields,$passwd) {
+	public static function encryptFields($fields,$passwd) {
 		global $adb, $log;
 		if (empty($fields) or !is_array($fields)) return false;
 		$passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
@@ -288,7 +290,7 @@ class ConfidentialInfo extends CRMEntity {
 	* @param passwd, the current company wide password
 	* @returns the same array with values it can decrypt decrypted
 	*/
-	static function decryptFields($fields, $passwd, $nonce='', $method='') {
+	public static function decryptFields($fields, $passwd, $nonce='', $method='') {
 		global $adb, $log;
 		if (empty($fields) or !is_array($fields)) return false;
 		$passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
@@ -320,7 +322,7 @@ class ConfidentialInfo extends CRMEntity {
 	 * Function to get a nonce
 	* @returns nonce
 	*/
-	static function getNONCE() {
+	public static function getNONCE() {
 		switch (coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt')) {
 			case 'libsodium':
 				return substr(bin2hex(\Sodium\randombytes_buf(\Sodium\CRYPTO_SECRETBOX_NONCEBYTES)),0,\Sodium\CRYPTO_SECRETBOX_NONCEBYTES);
@@ -394,7 +396,7 @@ class ConfidentialInfo extends CRMEntity {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
-					$encfields[$fname] = ConfidentialInfo::encryptArray_libsodium($fvalue, $nonce, $key);
+					$encfields[$fname] = ConfidentialInfo::encryptarray_libsodium($fvalue, $nonce, $key);
 				} elseif (empty($fvalue)) {
 					$encfields[$fname] = '';
 				} else {
@@ -405,7 +407,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function encryptArray_libsodium($fields, $nonce, $key) {
+	public static function encryptarray_libsodium($fields, $nonce, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -424,7 +426,7 @@ class ConfidentialInfo extends CRMEntity {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
-					$encfields[$fname] = ConfidentialInfo::encryptArray_pki($fvalue, $key);
+					$encfields[$fname] = ConfidentialInfo::encryptarray_pki($fvalue, $key);
 				} elseif (empty($fvalue)) {
 					$encfields[$fname] = '';
 				} else {
@@ -437,7 +439,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function encryptArray_pki($fields, $key) {
+	public static function encryptarray_pki($fields, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -456,7 +458,7 @@ class ConfidentialInfo extends CRMEntity {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
-					$encfields[$fname] = ConfidentialInfo::encryptArray_openssl($fvalue, $nonce, $key);
+					$encfields[$fname] = ConfidentialInfo::encryptarray_openssl($fvalue, $nonce, $key);
 				} elseif (empty($fvalue)) {
 					$encfields[$fname] = '';
 				} else {
@@ -467,7 +469,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function encryptArray_openssl($fields, $nonce, $key) {
+	public static function encryptarray_openssl($fields, $nonce, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -487,7 +489,7 @@ class ConfidentialInfo extends CRMEntity {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
-					$encfields[$fname] = ConfidentialInfo::encryptArray_mcrypt($fvalue,$td);
+					$encfields[$fname] = ConfidentialInfo::encryptarray_mcrypt($fvalue,$td);
 				} elseif (empty($fvalue)) {
 					$encfields[$fname] = '';
 				} else {
@@ -501,7 +503,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function encryptArray_mcrypt($fields,$td) {
+	public static function encryptarray_mcrypt($fields,$td) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -511,9 +513,10 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function isEncryptable($fname) {
+	public static function isEncryptable($fname) {
 		global $adb, $log;
 		$fldrs = $adb->pquery('select uitype, typeofdata from vtiger_field where fieldname=? and tabid=?',array($fname,getTabid('ConfidentialInfo')));
+		if (!$fldrs or $adb->num_rows($fldrs)==0) return true;
 		$fldinfo = $adb->fetch_array($fldrs);
 		list($ftype,$void) = explode('~', $fldinfo['typeofdata']);
 		switch($ftype){
@@ -538,7 +541,7 @@ class ConfidentialInfo extends CRMEntity {
 		return true;
 	}
 
-	static function decryptFields_mcrypt($fields,$passwd,$nonce) {
+	public static function decryptFields_mcrypt($fields,$passwd,$nonce) {
 		global $log;
 		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
 		$key = substr($passwd, 0, mcrypt_enc_get_key_size($td));
@@ -550,7 +553,7 @@ class ConfidentialInfo extends CRMEntity {
 			} else {
 				if (strpos($fvalue,' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
-					$decflds = ConfidentialInfo::decryptArray_mcrypt($valueArr, $td);
+					$decflds = ConfidentialInfo::decryptarray_mcrypt($valueArr, $td);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
 					$encfields[$fname] = @mdecrypt_generic($td,base64_decode($fvalue));
@@ -562,7 +565,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptArray_mcrypt($fields,$td) {
+	public static function decryptarray_mcrypt($fields,$td) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -571,7 +574,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptFields_libsodium($fields,$passwd,$nonce) {
+	public static function decryptFields_libsodium($fields,$passwd,$nonce) {
 		global $log;
 		$key = substr(sha1($passwd),0,\Sodium\CRYPTO_SECRETBOX_KEYBYTES);
 		$encfields = array();
@@ -581,7 +584,7 @@ class ConfidentialInfo extends CRMEntity {
 			} else {
 				if (strpos($fvalue,' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
-					$decflds = ConfidentialInfo::decryptArray_libsodium($valueArr,  $nonce, $key);
+					$decflds = ConfidentialInfo::decryptarray_libsodium($valueArr,  $nonce, $key);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
 					$encfields[$fname] = \Sodium\crypto_secretbox_open($fvalue, $nonce, $key);
@@ -591,7 +594,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptArray_libsodium($fields, $nonce, $key) {
+	public static function decryptarray_libsodium($fields, $nonce, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -614,7 +617,7 @@ class ConfidentialInfo extends CRMEntity {
 				} else {
 					if (strpos($fvalue,' |##| ')>0) {
 						$valueArr = explode(' |##| ', $fvalue);
-						$decflds = ConfidentialInfo::decryptArray_pki($valueArr, $key);
+						$decflds = ConfidentialInfo::decryptarray_pki($valueArr, $key);
 						$encfields[$fname] = implode(' |##| ', $decflds);
 					} else {
 						openssl_private_decrypt($fvalue, $decrypted, $key);
@@ -627,7 +630,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptArray_pki($fields, $key) {
+	public static function decryptarray_pki($fields, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -637,7 +640,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptFields_openssl($fields,$passwd,$nonce) {
+	public static function decryptFields_openssl($fields,$passwd,$nonce) {
 		global $log;
 		$key = substr(sha1($passwd),0,16);
 		$encfields = array();
@@ -647,7 +650,7 @@ class ConfidentialInfo extends CRMEntity {
 			} else {
 				if (strpos($fvalue,' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
-					$decflds = ConfidentialInfo::decryptArray_openssl($valueArr,  $nonce, $key);
+					$decflds = ConfidentialInfo::decryptarray_openssl($valueArr,  $nonce, $key);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
 					$encfields[$fname] = openssl_decrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
@@ -657,7 +660,7 @@ class ConfidentialInfo extends CRMEntity {
 		return $encfields;
 	}
 
-	static function decryptArray_openssl($fields, $nonce, $key) {
+	public static function decryptarray_openssl($fields, $nonce, $key) {
 		global $log;
 		$encfields = array();
 		foreach ($fields as $fname=>$fvalue) {
@@ -677,7 +680,7 @@ class ConfidentialInfo extends CRMEntity {
 		return chr($strCharNumber).bin2hex($strcode);
 	}
 
-	static function zx524bxzvb5xd($name) {
+	public static function zx524bxzvb5xd($name) {
 		$strCharNumber = ord($name[0]);
 		$strcode = '';
 		for ($i = 1; $i < strlen($name); $i=$i+2) {
@@ -695,26 +698,26 @@ class ConfidentialInfo extends CRMEntity {
 	 * @param String Module name
 	 * @param String Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
 	 */
-	function vtlib_handler($modulename, $event_type) {
-		if($event_type == 'module.postinstall') {
+	public function vtlib_handler($modulename, $event_type) {
+		if ($event_type == 'module.postinstall') {
 			// TODO Handle post installation actions
 			$this->setModuleSeqNumber('configure', $modulename, 'CINFO-', '000001');
 			$module = Vtiger_Module::getInstance($modulename);
 			$mod = Vtiger_Module::getInstance('Accounts');
-			$mod->setRelatedList($module, 'ConfidentialInfo',array('ADD'),'get_dependents_list');
+			$mod->setRelatedList($module, 'ConfidentialInfo', array('ADD'), 'get_dependents_list');
 			$mod = Vtiger_Module::getInstance('Contacts');
-			$mod->setRelatedList($module, 'ConfidentialInfo',array('ADD'),'get_dependents_list');
+			$mod->setRelatedList($module, 'ConfidentialInfo', array('ADD'), 'get_dependents_list');
 			$mod = Vtiger_Module::getInstance('Assets');
-			$mod->setRelatedList($module, 'ConfidentialInfo',array('ADD'),'get_dependents_list');
-		} else if($event_type == 'module.disabled') {
+			$mod->setRelatedList($module, 'ConfidentialInfo', array('ADD'), 'get_dependents_list');
+		} elseif ($event_type == 'module.disabled') {
 			// TODO Handle actions when this module is disabled.
-		} else if($event_type == 'module.enabled') {
+		} elseif ($event_type == 'module.enabled') {
 			// TODO Handle actions when this module is enabled.
-		} else if($event_type == 'module.preuninstall') {
+		} elseif ($event_type == 'module.preuninstall') {
 			// TODO Handle actions when this module is about to be deleted.
-		} else if($event_type == 'module.preupdate') {
+		} elseif ($event_type == 'module.preupdate') {
 			// TODO Handle actions before this module is updated.
-		} else if($event_type == 'module.postupdate') {
+		} elseif ($event_type == 'module.postupdate') {
 			// TODO Handle actions after this module is updated.
 		}
 	}
@@ -724,27 +727,27 @@ class ConfidentialInfo extends CRMEntity {
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	// function save_related_module($module, $crmid, $with_module, $with_crmid) { }
+	// public function save_related_module($module, $crmid, $with_module, $with_crmid) { }
 
 	/**
 	 * Handle deleting related module information.
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	//function delete_related_module($module, $crmid, $with_module, $with_crmid) { }
+	//public function delete_related_module($module, $crmid, $with_module, $with_crmid) { }
 
 	/**
 	 * Handle getting related list information.
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	//function get_related_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
+	//public function get_related_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
 
 	/**
 	 * Handle getting dependents list information.
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	//function get_dependents_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
+	//public function get_dependents_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
 }
 ?>
