@@ -124,8 +124,8 @@ class ConfidentialInfo extends CRMEntity {
 		}
 	}
 
-	public function retrieve_entity_info($record, $module, $deleted=false) {
-		parent::retrieve_entity_info($record, $module, $deleted);
+	public function retrieve_entity_info($record, $module, $deleted = false, $from_wf = false, $throwexception = false) {
+		parent::retrieve_entity_info($record, $module, $deleted, $from_wf, $throwexception);
 		$result = $this->db->pquery('select *
 			from vtiger_confidentialinfo
 			inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid

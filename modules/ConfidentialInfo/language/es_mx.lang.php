@@ -67,5 +67,4 @@ $mod_strings = array(
 	'encryptionMethod' => 'Método de Encriptación',
 	'PKIKeyDirectory' => 'Directorio Claves PKI',
 );
-
 ?>
