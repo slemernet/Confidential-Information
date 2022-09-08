@@ -17,17 +17,17 @@
  *  Version      : 5.5.0
  *  Author       : JPL TSolucio, S. L.
  *************************************************************************************************/
-require_once("Smarty_setup.php");
-require_once("include/utils/utils.php");
+require_once 'Smarty_setup.php';
+require_once 'include/utils/utils.php';
 global $currentModule, $app_strings, $mod_strings;
 $smty = new vtigerCRM_Smarty();
-$smty->assign('OPERATION_MESSAGE', getTranslatedString('DisabledProcess',$currentModule));
+$smty->assign('OPERATION_MESSAGE', getTranslatedString('DisabledProcess', $currentModule));
 $smty->assign('PUT_BACK_ACTION', 'false');
 $smty->assign('APP', $app_strings);
 $smty->assign('MOD', $mod_strings);
 $smty->display('modules/Vtiger/OperationNotPermitted.tpl');
-if (empty($_REQUEST['mode']) and $_REQUEST['action']!='ConfidentialInfoAjax') {
+if (empty($_REQUEST['mode']) && $_REQUEST['action']!='ConfidentialInfoAjax') {
 	checkFileAccessForInclusion("modules/$currentModule/ListView.php");
-	include_once("modules/$currentModule/ListView.php");
+	include_once 'modules/$currentModule/ListView.php';
 }
 ?>

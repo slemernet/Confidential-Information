@@ -7,19 +7,21 @@
 	Built For: jQuery 1.2.6
 */
 
-jQuery.fn.countDown = function(settings,to) {
+jQuery.fn.countDown = function (settings,to) {
 	settings = jQuery.extend({
 		startFontSize: '24px',
 		endFontSize: '24px',
 		duration: 1000,
 		startNumber: 50,
 		endNumber: 0,
-		callBack: function() { }
+		callBack: function () { }
 	}, settings);
-	return this.each(function() {
+	return this.each(function () {
 
 		//where do we start?
-		if(!to && to != settings.endNumber) { to = settings.startNumber; }
+		if (!to && to != settings.endNumber) {
+			to = settings.startNumber;
+		}
 
 		//set the countdown to the starting number
 		jQuery(this).text(to).css('fontSize',settings.startFontSize);
@@ -27,14 +29,12 @@ jQuery.fn.countDown = function(settings,to) {
 		//loopage
 		jQuery(this).animate({
 			'fontSize': settings.endFontSize
-		},settings.duration,'',function() {
-			if(to > settings.endNumber + 1) {
+		},settings.duration,'',function () {
+			if (to > settings.endNumber + 1) {
 				if (jQuery(this).countDown!=undefined) {
 					jQuery(this).css('fontSize',settings.startFontSize).text(to - 1).countDown(settings,to - 1);
 				}
-			}
-			else
-			{
+			} else {
 				settings.callBack(this);
 			}
 		});

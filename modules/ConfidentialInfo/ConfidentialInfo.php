@@ -11,9 +11,6 @@ require_once 'data/CRMEntity.php';
 require_once 'data/Tracker.php';
 
 class ConfidentialInfo extends CRMEntity {
-	public $db;
-	public $log;
-
 	public $table_name = 'vtiger_confidentialinfo';
 	public $table_index= 'confidentialinfoid';
 	public $column_fields = array();
@@ -21,6 +18,8 @@ class ConfidentialInfo extends CRMEntity {
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
 	public $HasDirectImageField = false;
+	public $moduleIcon = array('library' => 'utility', 'containerClass' => 'slds-icon_container slds-icon-standard-account', 'class' => 'slds-icon', 'icon'=>'lock');
+
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
@@ -43,7 +42,7 @@ class ConfidentialInfo extends CRMEntity {
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = array (
+	public $list_fields = array(
 		/* Format: Field Label => array(tablename => columnname) */
 		// tablename should not have prefix 'vtiger_'
 		'confidentialinfono' => array('confidentialinfo' => 'confidentialinfono'),
@@ -110,29 +109,34 @@ class ConfidentialInfo extends CRMEntity {
 	public $mandatory_fields = array('createdtime', 'modifiedtime', 'cireference');
 
 	// List of fields that will not be encrypted
-	static $nonEncryptedFields = array('confidentialinfoid','confidentialinfono','cireference','cicategory','cirelto','ciasset','description','record_id','record_module');
+	public static $nonEncryptedFields = array('confidentialinfoid','confidentialinfono','cireference','cicategory','cirelto','ciasset','description','record_id','record_module');
 
 	public function __construct() {
+		global $adb;
 		parent::__construct();
-		$result = $this->db->query('select * from vtiger_confidentialinfocf limit 1');
+		$result = $adb->query('select * from vtiger_confidentialinfocf limit 1');
 		if (!empty($result)) {
-			foreach ($this->db->getFieldsDefinition($result) as $fldinfo) {
+			foreach ($adb->getFieldsDefinition($result) as $fldinfo) {
 				if ($fldinfo->type=='253') {
-					$this->db->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' blob');
+					$adb->query('ALTER TABLE vtiger_confidentialinfocf CHANGE '.$fldinfo->name.' '.$fldinfo->name.' blob');
 				}
 			}
 		}
 	}
 
 	public function retrieve_entity_info($record, $module, $deleted = false, $from_wf = false, $throwexception = false) {
+		global $adb;
 		parent::retrieve_entity_info($record, $module, $deleted, $from_wf, $throwexception);
-		$result = $this->db->pquery('select *
-			from vtiger_confidentialinfo
-			inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid
-			where vtiger_confidentialinfo.confidentialinfoid=?',array($record));
-		if (!empty($result) and $this->db->num_rows($result)==1) {
-			$row = $this->db->raw_query_result_rowdata($result);
-			foreach ($this->db->getFieldsDefinition($result) as $fldinfo) {
+		$result = $adb->pquery(
+			'select *
+				from vtiger_confidentialinfo
+				inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid
+				where vtiger_confidentialinfo.confidentialinfoid=?',
+			array($record)
+		);
+		if (!empty($result) && $adb->num_rows($result)==1) {
+			$row = $adb->raw_query_result_rowdata($result);
+			foreach ($adb->getFieldsDefinition($result) as $fldinfo) {
 				if ($fldinfo->type=='252') { // blob > so we undo html_encode comming from peardatabase
 					$this->column_fields[$fldinfo->name] = $row[$fldinfo->name];
 				}
@@ -141,7 +145,7 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public function trash($module, $record) {
-		$this->set_cinfo_history($record,'delete','');
+		$this->set_cinfo_history($record, 'delete', '');
 		parent::trash($module, $record);
 	}
 
@@ -150,9 +154,9 @@ class ConfidentialInfo extends CRMEntity {
 			$this->insertIntoAttachment($this->id, $module);
 		}
 		if (empty($this->mode)) {
-			$this->set_cinfo_history($this->id,'create','');
+			$this->set_cinfo_history($this->id, 'create', '');
 		} else {
-			$this->set_cinfo_history($this->id,'update','');
+			$this->set_cinfo_history($this->id, 'update', '');
 		}
 	}
 
@@ -161,28 +165,27 @@ class ConfidentialInfo extends CRMEntity {
 	 *	return $return_data - array with header and the entries in format array('header'=>$header,'entries'=>$entries_list) where as $header and $entries_list are array which contains all the column values of a row
 	 */
 	public function get_cinfo_history($id) {
-		global $log, $adb, $mod_strings, $app_strings, $current_user;
-		$log->debug("Entering get_cinfo_history(".$id.") method ...");
+		global $log, $adb, $mod_strings;
+		$log->debug('> get_cinfo_history '.$id);
 
 		$query = 'select * from vtiger_confidentialinfohistory where ciid = ? order by whenacts desc';
 		$result=$adb->pquery($query, array($id));
-		$noofrows = $adb->num_rows($result);
 
 		$header[] = $mod_strings['whomacts'];
 		$header[] = $mod_strings['whenacts'];
 		$header[] = $mod_strings['action'];
 		$header[] = $mod_strings['comment'];
 
-		while($row = $adb->fetch_array($result)) {
+		while ($row = $adb->fetch_array($result)) {
 			$entries = array();
 			$entries[] = $row['whomacts'];
 			$entries[] = DateTimeField::convertToUserFormat($row['whenacts']);
-			$entries[] = getTranslatedString($row['action'],'ConfidentialInfo');
+			$entries[] = getTranslatedString($row['action'], 'ConfidentialInfo');
 			$entries[] = $row['comment'];
 			$entries_list[] = $entries;
 		}
 		$return_data = array('header'=>$header,'entries'=>$entries_list,'navigation'=>array('',''));
-		$log->debug("Exiting get_cinfo_history method ...");
+		$log->debug('< get_cinfo_history');
 		return $return_data;
 	}
 
@@ -198,9 +201,9 @@ class ConfidentialInfo extends CRMEntity {
 	 *  @param $comment - comment to add to the log
 	 *	return true
 	 */
-	public static function set_cinfo_history($record,$action,$comment) {
-		global $log, $adb, $mod_strings, $app_strings, $current_user;
-		$log->debug("Entering set_cinfo_history($record) method ...");
+	public static function set_cinfo_history($record, $action, $comment) {
+		global $log, $adb, $current_user;
+		$log->debug("> set_cinfo_history $record");
 
 		$query = 'insert into vtiger_confidentialinfohistory (ciid,whomacts,whomactsid,action,whenacts,comment) values (?,?,?,?,?,?)';
 
@@ -212,9 +215,9 @@ class ConfidentialInfo extends CRMEntity {
 		$values[] = date('Y-m-d H:i');
 		$values[] = $comment;
 
-		$result=$adb->pquery($query, $values);
+		$adb->pquery($query, $values);
 
-		$log->debug('Exiting set_cinfo_history method ...');
+		$log->debug('< set_cinfo_history');
 		return true;
 	}
 
@@ -239,30 +242,39 @@ class ConfidentialInfo extends CRMEntity {
 	 * @param passwd, the current company wide password
 	 * @returns the same array with values it can encrypt encrypted
 	 */
-	public static function encryptFields($fields,$passwd) {
-		global $adb, $log;
-		if (empty($fields) or !is_array($fields)) return false;
+	public static function encryptFields($fields, $passwd) {
+		global $adb;
+		if (empty($fields) || !is_array($fields)) {
+			return false;
+		}
 		$passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
-		if ($adb->num_rows($passrs)==0) return false;
+		if ($adb->num_rows($passrs)==0) {
+			return false;
+		}
 		$passinfo = $adb->fetch_array($passrs);
-		if ($passinfo['paswd']!=sha1($passwd)) return false;
+		if ($passinfo['paswd']!=sha1($passwd)) {
+			return false;
+		}
 		switch (coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt')) {
 			case 'libsodium':
-				return ConfidentialInfo::encryptFields_libsodium($fields,$passwd,$passinfo['ciiv']);
+				return ConfidentialInfo::encryptFields_libsodium($fields, $passwd, $passinfo['ciiv']);
 			break;
 			case 'openssl':
-				return ConfidentialInfo::encryptFields_openssl($fields,$passwd,$passinfo['ciiv']);
+				return ConfidentialInfo::encryptFields_openssl($fields, $passwd, $passinfo['ciiv']);
 			break;
 			case 'pki':
 				$privatekey = $passinfo['ciiv'].'/private.key';
-				if (file_exists($privatekey) or empty($_REQUEST['mode'])) {
-					return ConfidentialInfo::encryptFields_pki($fields,'file://'.$passinfo['ciiv'].'/public.key');
-				} elseif (!empty($_REQUEST['mode']) and !empty($_REQUEST['record'])) {
-					$result = $adb->pquery('select *
-						from vtiger_confidentialinfo
-						inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid
-						where vtiger_confidentialinfo.confidentialinfoid=?',array($_REQUEST['record']));
-					if (!empty($result) and $adb->num_rows($result)==1) {
+				if (file_exists($privatekey) || empty($_REQUEST['mode'])) {
+					return ConfidentialInfo::encryptFields_pki($fields, 'file://'.$passinfo['ciiv'].'/public.key');
+				} elseif (!empty($_REQUEST['mode']) && !empty($_REQUEST['record'])) {
+					$result = $adb->pquery(
+						'select *
+							from vtiger_confidentialinfo
+							inner join vtiger_confidentialinfocf on vtiger_confidentialinfocf.confidentialinfoid = vtiger_confidentialinfo.confidentialinfoid
+							where vtiger_confidentialinfo.confidentialinfoid=?',
+						array($_REQUEST['record'])
+					);
+					if (!empty($result) && $adb->num_rows($result)==1) {
 						$row = $adb->raw_query_result_rowdata($result);
 						foreach ($adb->getFieldsDefinition($result) as $fldinfo) {
 							if ($fldinfo->type=='252') { // blob > so we undo html_encode comming from peardatabase
@@ -276,10 +288,10 @@ class ConfidentialInfo extends CRMEntity {
 				} else {
 					return $fields;
 				}
-			break;
+				break;
 			case 'mcrypt':
 			default:
-				return ConfidentialInfo::encryptFields_mcrypt($fields,$passwd,$passinfo['ciiv']);
+				return ConfidentialInfo::encryptFields_mcrypt($fields, $passwd, $passinfo['ciiv']);
 			break;
 		}
 	}
@@ -290,11 +302,15 @@ class ConfidentialInfo extends CRMEntity {
 	* @param passwd, the current company wide password
 	* @returns the same array with values it can decrypt decrypted
 	*/
-	public static function decryptFields($fields, $passwd, $nonce='', $method='') {
-		global $adb, $log;
-		if (empty($fields) or !is_array($fields)) return false;
+	public static function decryptFields($fields, $passwd, $nonce = '', $method = '') {
+		global $adb;
+		if (empty($fields) || !is_array($fields)) {
+			return false;
+		}
 		$passrs = $adb->query('select * from vtiger_cicryptinfo limit 1');
-		if ($adb->num_rows($passrs)==0) return false;
+		if ($adb->num_rows($passrs)==0) {
+			return false;
+		}
 		if (empty($nonce)) {
 			$nonce = $adb->query_result($passrs, 0, 'ciiv');
 		}
@@ -303,17 +319,17 @@ class ConfidentialInfo extends CRMEntity {
 		}
 		switch ($method) {
 			case 'libsodium':
-				return ConfidentialInfo::decryptFields_libsodium($fields,$passwd,$nonce);
+				return ConfidentialInfo::decryptFields_libsodium($fields, $passwd, $nonce);
 			break;
 			case 'openssl':
-				return ConfidentialInfo::decryptFields_openssl($fields,$passwd,$nonce);
+				return ConfidentialInfo::decryptFields_openssl($fields, $passwd, $nonce);
 			break;
 			case 'pki':
-				return ConfidentialInfo::decryptFields_pki($fields,'file://'.$adb->query_result($passrs, 0, 'ciiv').'/private.key');
+				return ConfidentialInfo::decryptFields_pki($fields, 'file://'.$adb->query_result($passrs, 0, 'ciiv').'/private.key');
 			break;
 			case 'mcrypt':
 			default:
-				return ConfidentialInfo::decryptFields_mcrypt($fields,$passwd,$nonce);
+				return ConfidentialInfo::decryptFields_mcrypt($fields, $passwd, $nonce);
 			break;
 		}
 	}
@@ -325,19 +341,19 @@ class ConfidentialInfo extends CRMEntity {
 	public static function getNONCE() {
 		switch (coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt')) {
 			case 'libsodium':
-				return substr(bin2hex(\Sodium\randombytes_buf(\Sodium\CRYPTO_SECRETBOX_NONCEBYTES)),0,\Sodium\CRYPTO_SECRETBOX_NONCEBYTES);
+				return substr(bin2hex(\Sodium\randombytes_buf(\Sodium\CRYPTO_SECRETBOX_NONCEBYTES)), 0, \Sodium\CRYPTO_SECRETBOX_NONCEBYTES);
 			break;
 			case 'openssl':
-				return substr(bin2hex(random_bytes(16)),0,16);
+				return substr(bin2hex(random_bytes(16)), 0, 16);
 			break;
 			case 'pki':
 				return (empty($_REQUEST['pkidir']) ? 'modules/ConfidentialInfo' : vtlib_purify($_REQUEST['pkidir']));
 			break;
 			case 'mcrypt':
 			default:
-				$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
-				$iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td),MCRYPT_RAND);
-				return substr(bin2hex($iv),0,mcrypt_enc_get_iv_size($td));
+				$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256, '', MCRYPT_MODE_CFB, '');
+				$iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+				return substr(bin2hex($iv), 0, mcrypt_enc_get_iv_size($td));
 			break;
 		}
 	}
@@ -346,7 +362,7 @@ class ConfidentialInfo extends CRMEntity {
 	 * Function to decrypt and encrypt all record with a new password
 	 * @params password
 	 */
-	public static function migrate2NewPassword($frommethod, $cinewpass, $cioldpass, $oldnonce, $alreadyDecrypted=false) {
+	public static function migrate2NewPassword($frommethod, $cinewpass, $cioldpass, $oldnonce, $alreadyDecrypted = false) {
 		global $adb;
 		set_time_limit(0);
 		$focus = CRMEntity::getInstance('ConfidentialInfo');
@@ -356,20 +372,20 @@ class ConfidentialInfo extends CRMEntity {
 		$wfldsmn = array();
 		while ($fld = $adb->fetch_array($fldrs)) {
 			$fname = $fld['fieldname'];
-			if (!in_array($fname,ConfidentialInfo::$nonEncryptedFields) and ConfidentialInfo::isEncryptable($fname)) {
+			if (!in_array($fname, ConfidentialInfo::$nonEncryptedFields) && ConfidentialInfo::isEncryptable($fname)) {
 				$wfldsmn[] = $fname;
 			}
 		}
 		if (count($wfldsmn)>0) {
-			$cirs = $adb->query('select vtiger_confidentialinfo.confidentialinfoid,' . implode(',',$wfldsmn) . '
+			$cirs = $adb->query('select vtiger_confidentialinfo.confidentialinfoid,' . implode(',', $wfldsmn) . '
 				from vtiger_confidentialinfo
 				inner join vtiger_confidentialinfocf on vtiger_confidentialinfo.confidentialinfoid=vtiger_confidentialinfocf.confidentialinfoid');
 			$ciupd = 'update vtiger_confidentialinfo
 				inner join vtiger_confidentialinfocf on vtiger_confidentialinfo.confidentialinfoid=vtiger_confidentialinfocf.confidentialinfoid
-				set ' . implode('=?,',$wfldsmn).'=? where vtiger_confidentialinfo.confidentialinfoid=?';
+				set ' . implode('=?,', $wfldsmn).'=? where vtiger_confidentialinfo.confidentialinfoid=?';
 			$cnt=0;
-			for ($cirow = 0;$cirow<$adb->num_rows($cirs);$cirow++) {
-				$ci = $adb->raw_query_result_rowdata($cirs,$cirow);
+			for ($cirow = 0; $cirow<$adb->num_rows($cirs); $cirow++) {
+				$ci = $adb->raw_query_result_rowdata($cirs, $cirow);
 				$cifmn = array();
 				foreach ($wfldsmn as $fld) {
 					$cifmn[$fld] = $ci[$fld];
@@ -379,20 +395,21 @@ class ConfidentialInfo extends CRMEntity {
 				}
 				$cifmn = ConfidentialInfo::encryptFields($cifmn, $cinewpass);
 				$cifmn[] = $ci['confidentialinfoid'];
-				$adb->pquery($ciupd,$cifmn);
+				$adb->pquery($ciupd, $cifmn);
 				$cnt++;
-				if ($cnt % 10==0) echo ".";
+				if ($cnt % 10==0) {
+					echo '.';
+				}
 			}
 		}
 		return $adb->num_rows($cirs);
 	}
 
-	public static function encryptFields_libsodium($fields,$passwd,$nonce) {
-		global $log;
-		$key = substr(sha1($passwd),0,\Sodium\CRYPTO_SECRETBOX_KEYBYTES);
+	public static function encryptFields_libsodium($fields, $passwd, $nonce) {
+		$key = substr(sha1($passwd), 0, \Sodium\CRYPTO_SECRETBOX_KEYBYTES);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
@@ -408,21 +425,19 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public static function encryptarray_libsodium($fields, $nonce, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			$encfields[$fname] = \Sodium\crypto_secretbox($fvalue, $nonce, $key);
 		}
 		return $encfields;
 	}
 
-	public static function encryptFields_pki($fields,$publickey) {
-		global $log;
+	public static function encryptFields_pki($fields, $publickey) {
 		// Get the public Key of the recipient
 		$key = openssl_pkey_get_public($publickey);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
@@ -440,21 +455,19 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public static function encryptarray_pki($fields, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			openssl_public_encrypt($fvalue, $encrypted, $key);
 			$encfields[$fname] = $encrypted;
 		}
 		return $encfields;
 	}
 
-	public static function encryptFields_openssl($fields,$passwd,$nonce) {
-		global $log;
-		$key = substr(sha1($passwd),0,16);
+	public static function encryptFields_openssl($fields, $passwd, $nonce) {
+		$key = substr(sha1($passwd), 0, 16);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
@@ -470,121 +483,121 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public static function encryptarray_openssl($fields, $nonce, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			$encfields[$fname] = openssl_encrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
 		}
 		return $encfields;
 	}
 
-	public static function encryptFields_mcrypt($fields,$passwd,$nonce) {
-		global $log;
-		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
+	public static function encryptFields_mcrypt($fields, $passwd, $nonce) {
+		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256, '', MCRYPT_MODE_CFB, '');
 		$key = substr($passwd, 0, mcrypt_enc_get_key_size($td));
 		mcrypt_generic_init($td, $key, $nonce);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if (is_array($fvalue)) {
-					$encfields[$fname] = ConfidentialInfo::encryptarray_mcrypt($fvalue,$td);
+					$encfields[$fname] = ConfidentialInfo::encryptarray_mcrypt($fvalue, $td);
 				} elseif (empty($fvalue)) {
 					$encfields[$fname] = '';
 				} else {
-					$ef = mcrypt_generic($td,$fvalue);
+					$ef = mcrypt_generic($td, $fvalue);
 					$encfields[$fname] = base64_encode($ef);
 				}
 			}
 		}
-		mcrypt_generic_deinit ($td);
+		mcrypt_generic_deinit($td);
 		mcrypt_module_close($td);
 		return $encfields;
 	}
 
-	public static function encryptarray_mcrypt($fields,$td) {
-		global $log;
+	public static function encryptarray_mcrypt($fields, $td) {
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			$ef = mcrypt_generic($td,$fvalue);
+		foreach ($fields as $fname => $fvalue) {
+			$ef = mcrypt_generic($td, $fvalue);
 			$encfields[$fname] = base64_encode($ef);
 		}
 		return $encfields;
 	}
 
 	public static function isEncryptable($fname) {
-		global $adb, $log;
-		$fldrs = $adb->pquery('select uitype, typeofdata from vtiger_field where fieldname=? and tabid=?',array($fname,getTabid('ConfidentialInfo')));
-		if (!$fldrs or $adb->num_rows($fldrs)==0) return true;
+		global $adb;
+		$fldrs = $adb->pquery('select uitype, typeofdata from vtiger_field where fieldname=? and tabid=?', array($fname, getTabid('ConfidentialInfo')));
+		if (!$fldrs || $adb->num_rows($fldrs)==0) {
+			return true;
+		}
 		$fldinfo = $adb->fetch_array($fldrs);
-		list($ftype,$void) = explode('~', $fldinfo['typeofdata']);
-		switch($ftype){
+		list($ftype, $void) = explode('~', $fldinfo['typeofdata']);
+		switch ($ftype) {
 			case 'T':
 			case 'D':
 			case 'DT':
 			case 'N':
 			case 'NN':
-			case 'I': return false;
-			default: ;  // continue and check webservice types
+			case 'I':
+				return false;
+			default:
+				; // continue and check webservice types
 		}
-		$fldrs = $adb->pquery("select fieldtype from vtiger_ws_fieldtype where uitype=?", array($fldinfo['uitype']));
+		$fldrs = $adb->pquery('select fieldtype from vtiger_ws_fieldtype where uitype=?', array($fldinfo['uitype']));
 		$fldinfo = $adb->fetch_array($fldrs);
-		switch($fldinfo['fieldtype']){
+		switch ($fldinfo['fieldtype']) {
 			case 'boolean':
 			case 'owner':
 			case 'file':
 			case 'currency':
-			case 'reference': return false;
-			default: ;  // true
+			case 'reference':
+				return false;
+			default:
+				; // true
 		};
 		return true;
 	}
 
-	public static function decryptFields_mcrypt($fields,$passwd,$nonce) {
-		global $log;
-		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256,'',MCRYPT_MODE_CFB, '');
+	public static function decryptFields_mcrypt($fields, $passwd, $nonce) {
+		$td = mcrypt_module_open(MCRYPT_RIJNDAEL_256, '', MCRYPT_MODE_CFB, '');
 		$key = substr($passwd, 0, mcrypt_enc_get_key_size($td));
 		mcrypt_generic_init($td, $key, $nonce);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
-				if (strpos($fvalue,' |##| ')>0) {
+				if (strpos($fvalue, ' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
 					$decflds = ConfidentialInfo::decryptarray_mcrypt($valueArr, $td);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
-					$encfields[$fname] = @mdecrypt_generic($td,base64_decode($fvalue));
+					$encfields[$fname] = @mdecrypt_generic($td, base64_decode($fvalue));
 				}
 			}
 		}
-		mcrypt_generic_deinit ($td);
+		mcrypt_generic_deinit($td);
 		mcrypt_module_close($td);
 		return $encfields;
 	}
 
-	public static function decryptarray_mcrypt($fields,$td) {
-		global $log;
+	public static function decryptarray_mcrypt($fields, $td) {
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			$encfields[$fname] = @mdecrypt_generic($td,base64_decode($fvalue));
+		foreach ($fields as $fname => $fvalue) {
+			$encfields[$fname] = @mdecrypt_generic($td, base64_decode($fvalue));
 		}
 		return $encfields;
 	}
 
-	public static function decryptFields_libsodium($fields,$passwd,$nonce) {
-		global $log;
-		$key = substr(sha1($passwd),0,\Sodium\CRYPTO_SECRETBOX_KEYBYTES);
+	public static function decryptFields_libsodium($fields, $passwd, $nonce) {
+		$key = substr(sha1($passwd), 0, \Sodium\CRYPTO_SECRETBOX_KEYBYTES);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
-				if (strpos($fvalue,' |##| ')>0) {
+				if (strpos($fvalue, ' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
-					$decflds = ConfidentialInfo::decryptarray_libsodium($valueArr,  $nonce, $key);
+					$decflds = ConfidentialInfo::decryptarray_libsodium($valueArr, $nonce, $key);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
 					$encfields[$fname] = \Sodium\crypto_secretbox_open($fvalue, $nonce, $key);
@@ -595,27 +608,25 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public static function decryptarray_libsodium($fields, $nonce, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			$encfields[$fname] = \Sodium\crypto_secretbox_open($fvalue, $nonce, $key);
 		}
 		return $encfields;
 	}
 
-	static function decryptFields_pki($fields,$privatekey) {
-		global $log;
+	public static function decryptFields_pki($fields, $privatekey) {
 		// Get the private Key
 		$key = openssl_pkey_get_private($privatekey);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
 				if ($key === false) {
 					$encfields[$fname] = '';
 				} else {
-					if (strpos($fvalue,' |##| ')>0) {
+					if (strpos($fvalue, ' |##| ')>0) {
 						$valueArr = explode(' |##| ', $fvalue);
 						$decflds = ConfidentialInfo::decryptarray_pki($valueArr, $key);
 						$encfields[$fname] = implode(' |##| ', $decflds);
@@ -626,31 +637,31 @@ class ConfidentialInfo extends CRMEntity {
 				}
 			}
 		}
-		if ($key) openssl_free_key($key);
+		if ($key) {
+			openssl_free_key($key);
+		}
 		return $encfields;
 	}
 
 	public static function decryptarray_pki($fields, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			openssl_private_decrypt($fvalue, $decrypted, $key);
 			$encfields[$fname] = $decrypted;
 		}
 		return $encfields;
 	}
 
-	public static function decryptFields_openssl($fields,$passwd,$nonce) {
-		global $log;
-		$key = substr(sha1($passwd),0,16);
+	public static function decryptFields_openssl($fields, $passwd, $nonce) {
+		$key = substr(sha1($passwd), 0, 16);
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
-			if (in_array($fname,ConfidentialInfo::$nonEncryptedFields) or !ConfidentialInfo::isEncryptable($fname)) {
+		foreach ($fields as $fname => $fvalue) {
+			if (in_array($fname, ConfidentialInfo::$nonEncryptedFields) || !ConfidentialInfo::isEncryptable($fname)) {
 				$encfields[$fname] = $fvalue;
 			} else {
-				if (strpos($fvalue,' |##| ')>0) {
+				if (strpos($fvalue, ' |##| ')>0) {
 					$valueArr = explode(' |##| ', $fvalue);
-					$decflds = ConfidentialInfo::decryptarray_openssl($valueArr,  $nonce, $key);
+					$decflds = ConfidentialInfo::decryptarray_openssl($valueArr, $nonce, $key);
 					$encfields[$fname] = implode(' |##| ', $decflds);
 				} else {
 					$encfields[$fname] = openssl_decrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
@@ -661,17 +672,16 @@ class ConfidentialInfo extends CRMEntity {
 	}
 
 	public static function decryptarray_openssl($fields, $nonce, $key) {
-		global $log;
 		$encfields = array();
-		foreach ($fields as $fname=>$fvalue) {
+		foreach ($fields as $fname => $fvalue) {
 			$encfields[$fname] = openssl_decrypt($fvalue, 'AES-128-CBC', $key, OPENSSL_RAW_DATA, $nonce);
 		}
 		return $encfields;
 	}
 
-	static function k87rgsz5f4g9eer($name) {
+	public static function k87rgsz5f4g9eer($name) {
 		srand((double)microtime()*1000000);
-		$strCharNumber = rand(48,56);
+		$strCharNumber = rand(48, 56);
 		$strcode = '';
 		for ($i = 0; $i < strlen($name); $i++) {
 			$strChar = chr((ord($name[$i]) + $strCharNumber) % 255);
@@ -686,7 +696,9 @@ class ConfidentialInfo extends CRMEntity {
 		for ($i = 1; $i < strlen($name); $i=$i+2) {
 			$numc = hexdec('0x'.$name[$i].$name[$i+1]);
 			$numc = $numc-$strCharNumber;
-			if ($numc < 0) $numc = 255 - $numc;
+			if ($numc < 0) {
+				$numc = 255 - $numc;
+			}
 			$strChar = chr($numc);
 			$strcode.= $strChar;
 		}
@@ -700,7 +712,7 @@ class ConfidentialInfo extends CRMEntity {
 	 */
 	public function vtlib_handler($modulename, $event_type) {
 		if ($event_type == 'module.postinstall') {
-			// TODO Handle post installation actions
+			// Handle post installation actions
 			$this->setModuleSeqNumber('configure', $modulename, 'CINFO-', '000001');
 			$module = Vtiger_Module::getInstance($modulename);
 			$mod = Vtiger_Module::getInstance('Accounts');
@@ -710,15 +722,15 @@ class ConfidentialInfo extends CRMEntity {
 			$mod = Vtiger_Module::getInstance('Assets');
 			$mod->setRelatedList($module, 'ConfidentialInfo', array('ADD'), 'get_dependents_list');
 		} elseif ($event_type == 'module.disabled') {
-			// TODO Handle actions when this module is disabled.
+			// Handle actions when this module is disabled.
 		} elseif ($event_type == 'module.enabled') {
-			// TODO Handle actions when this module is enabled.
+			// Handle actions when this module is enabled.
 		} elseif ($event_type == 'module.preuninstall') {
-			// TODO Handle actions when this module is about to be deleted.
+			// Handle actions when this module is about to be deleted.
 		} elseif ($event_type == 'module.preupdate') {
-			// TODO Handle actions before this module is updated.
+			// Handle actions before this module is updated.
 		} elseif ($event_type == 'module.postupdate') {
-			// TODO Handle actions after this module is updated.
+			// Handle actions after this module is updated.
 		}
 	}
 

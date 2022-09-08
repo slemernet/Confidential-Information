@@ -7,7 +7,7 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  ************************************************************************************/
-require_once('Smarty_setup.php');
+require_once 'Smarty_setup.php';
 
 global $mod_strings, $app_strings, $currentModule, $current_user, $theme, $log;
 
@@ -27,28 +27,28 @@ if (empty($cidwspinfo)) {
 	$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'GetPassword.tpl'));
 } else {
 	$rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
-	if (empty($rsps) or $adb->num_rows($rsps)==0) {
-		$smarty->assign('OPERATION_MESSAGE', getTranslatedString('ErrorPassword',$currentModule));
+	if (empty($rsps) || $adb->num_rows($rsps)==0) {
+		$smarty->assign('OPERATION_MESSAGE', getTranslatedString('ErrorPassword', $currentModule));
 		$smarty->display('modules/Vtiger/OperationNotPermitted.tpl');
 	} else {
 		$row = $adb->fetch_array($rsps);
 		if (sha1($cidwspinfo)!=$row['paswd']) {
 			$smarty->assign('ID', $record);
 			$smarty->assign('BadPassword', 'true');
-			$focus->set_cinfo_history($record,'accessnok','');
+			$focus->set_cinfo_history($record, 'accessnok', '');
 			$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'GetPassword.tpl'));
 		} else {
-$smarty->assign('CITimeout', $row['timeout']);
-$smarty->assign("cidwspinfo", $focus->k87rgsz5f4g9eer($cidwspinfo));
-$focus->set_cinfo_history($record,'retrieve','DetailView');
-// decrypt here
-$focus->column_fields = $focus->decryptFields($focus->column_fields,$cidwspinfo);
+			$smarty->assign('CITimeout', $row['timeout']);
+			$smarty->assign("cidwspinfo", $focus->k87rgsz5f4g9eer($cidwspinfo));
+			$focus->set_cinfo_history($record, 'retrieve', 'DetailView');
+			// decrypt here
+			$focus->column_fields = $focus->decryptFields($focus->column_fields, $cidwspinfo);
 
-$blocks = getBlocks($currentModule,'detail_view','',$focus->column_fields);
-$smarty->assign('BLOCKS', $blocks);
-$smarty->assign('FIELDS',$focus->column_fields);
+			$blocks = getBlocks($currentModule, 'detail_view', '', $focus->column_fields);
+			$smarty->assign('BLOCKS', $blocks);
+			$smarty->assign('FIELDS', $focus->column_fields);
 
-$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'DetailView.tpl'));
+			$smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'DetailView.tpl'));
 		}
 	}
 }

@@ -17,69 +17,71 @@
  *  Author       : JPL TSolucio, S. L.
  *  Promotion    : Object Solutions
  *************************************************************************************************/
-require_once("Smarty_setup.php");
-require_once("include/utils/utils.php");
+require_once 'Smarty_setup.php';
+require_once 'include/utils/utils.php';
 global $adb,$log,$current_language,$app_strings,$theme;
-$theme_path="themes/".$theme."/";
-$image_path=$theme_path."images/";
+$theme_path='themes/'.$theme.'/';
+$image_path=$theme_path.'images/';
 $smarty = new vtigerCRM_Smarty();
 $smarty->assign('APP', $app_strings);
 $mod = array_merge(
-	return_module_language($current_language,'ConfidentialInfo'),
-	return_module_language($current_language,'Settings'));
-$smarty->assign("MOD", $mod);
-$smarty->assign("THEME",$theme);
-$smarty->assign("IMAGE_PATH",$image_path);
-$smarty->assign("MODULE_NAME", 'ConfidentialInfo');
-$smarty->assign("MODULE_ICON", 'modules/ConfidentialInfo/lock.png');
-$smarty->assign("MODULE_TITLE", $mod['ChangePassword']);
-$smarty->assign("MODULE_Description", $mod['ChangePasswordDescription']);
-if (isset($passwderror) and $passwderror) {
-	$smarty->assign("passwderror", 'true');
+	return_module_language($current_language, 'ConfidentialInfo'),
+	return_module_language($current_language, 'Settings')
+);
+$smarty->assign('MOD', $mod);
+$smarty->assign('THEME', $theme);
+$smarty->assign('IMAGE_PATH', $image_path);
+$smarty->assign('MODULE_NAME', 'ConfidentialInfo');
+$smarty->assign('MODULE', 'ConfidentialInfo');
+$smarty->assign('MODULE_ICON', 'modules/ConfidentialInfo/lock.png');
+$smarty->assign('MODULE_TITLE', $mod['ChangePassword']);
+$smarty->assign('MODULE_Description', $mod['ChangePasswordDescription']);
+if (isset($passwderror) && $passwderror) {
+	$smarty->assign('passwderror', 'true');
 } else {
 	$smarty->assign('passwderror', 'false');
 }
 $cmethod = coreBOS_Settings::getSetting('CINFO_EncryptMethod', 'mcrypt');
 if ($cmethod == 'mcrypt') {
-	$smarty->assign('MCRYPTSELECTED','selected');
-	$smarty->assign('LIBSODIUMSELECTED','');
-	$smarty->assign('OPENSSLSELECTED','');
-	$smarty->assign('OPENSSLPKISELECTED','');
+	$smarty->assign('MCRYPTSELECTED', 'selected');
+	$smarty->assign('LIBSODIUMSELECTED', '');
+	$smarty->assign('OPENSSLSELECTED', '');
+	$smarty->assign('OPENSSLPKISELECTED', '');
 } elseif ($cmethod == 'openssl') {
-	$smarty->assign('MCRYPTSELECTED','');
-	$smarty->assign('LIBSODIUMSELECTED','');
-	$smarty->assign('OPENSSLSELECTED','selected');
-	$smarty->assign('OPENSSLPKISELECTED','');
+	$smarty->assign('MCRYPTSELECTED', '');
+	$smarty->assign('LIBSODIUMSELECTED', '');
+	$smarty->assign('OPENSSLSELECTED', 'selected');
+	$smarty->assign('OPENSSLPKISELECTED', '');
 } elseif ($cmethod == 'pki') {
-	$smarty->assign('MCRYPTSELECTED','');
-	$smarty->assign('LIBSODIUMSELECTED','');
-	$smarty->assign('OPENSSLSELECTED','selected');
-	$smarty->assign('OPENSSLPKISELECTED','selected');
+	$smarty->assign('MCRYPTSELECTED', '');
+	$smarty->assign('LIBSODIUMSELECTED', '');
+	$smarty->assign('OPENSSLSELECTED', 'selected');
+	$smarty->assign('OPENSSLPKISELECTED', 'selected');
 } else {
-	$smarty->assign('MCRYPTSELECTED','');
-	$smarty->assign('LIBSODIUMSELECTED','selected');
-	$smarty->assign('OPENSSLSELECTED','');
-	$smarty->assign('OPENSSLPKISELECTED','');
+	$smarty->assign('MCRYPTSELECTED', '');
+	$smarty->assign('LIBSODIUMSELECTED', 'selected');
+	$smarty->assign('OPENSSLSELECTED', '');
+	$smarty->assign('OPENSSLPKISELECTED', '');
 }
-$smarty->assign('MCRYPTLOADED',extension_loaded('mcrypt'));
-$smarty->assign('LIBSODIUMLOADED',extension_loaded('libsodium'));
-$smarty->assign('OPENSSLLOADED',extension_loaded('openssl'));
+$smarty->assign('MCRYPTLOADED', extension_loaded('mcrypt'));
+$smarty->assign('LIBSODIUMLOADED', extension_loaded('libsodium'));
+$smarty->assign('OPENSSLLOADED', extension_loaded('openssl'));
 
 $rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
-$smarty->assign('PKIKEYDIR','');
+$smarty->assign('PKIKEYDIR', '');
 if ($adb->num_rows($rsps)==0) {
-	$smarty->assign('CIERROR','false');
-	$smarty->assign('CIFIRSTRUN','true');
+	$smarty->assign('CIERROR', 'false');
+	$smarty->assign('CIFIRSTRUN', 'true');
 } elseif ($adb->num_rows($rsps)==1) {
 	$row = $adb->fetch_array($rsps);
-	$smarty->assign('CIERROR','false');
-	$smarty->assign('CIFIRSTRUN','false');
-	$smarty->assign('CILastChangedOn',DateTimeField::convertToUserFormat($row['lastchange']));
-	$smarty->assign('CILastChangedBy',$row['lastchangeby']);
-	$smarty->assign('PKIKEYDIR',$row['ciiv']);
+	$smarty->assign('CIERROR', 'false');
+	$smarty->assign('CIFIRSTRUN', 'false');
+	$smarty->assign('CILastChangedOn', DateTimeField::convertToUserFormat($row['lastchange']));
+	$smarty->assign('CILastChangedBy', $row['lastchangeby']);
+	$smarty->assign('PKIKEYDIR', $row['ciiv']);
 } else {
-	$smarty->assign('CIERROR','true');
-	$smarty->assign('CIERRORMSG',getTranslatedString('DBInfoError','ConfidentialInfo'));
+	$smarty->assign('CIERROR', 'true');
+	$smarty->assign('CIERRORMSG', getTranslatedString('DBInfoError', 'ConfidentialInfo'));
 }
 $smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'CIChgPassword.tpl'));
 ?>

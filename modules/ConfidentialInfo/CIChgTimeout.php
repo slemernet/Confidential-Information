@@ -17,45 +17,47 @@
  *  Author       : JPL TSolucio, S. L.
  *  Promotion    : Object Solutions
  *************************************************************************************************/
-require_once("Smarty_setup.php");
-require_once("include/utils/utils.php");
+require_once 'Smarty_setup.php';
+require_once 'include/utils/utils.php';
 global $adb,$log,$current_language,$app_strings,$theme;
-$theme_path="themes/".$theme."/";
-$image_path=$theme_path."images/";
+$theme_path='themes/'.$theme.'/';
+$image_path=$theme_path.'images/';
 $smarty = new vtigerCRM_Smarty();
 $smarty->assign('APP', $app_strings);
 $mod = array_merge(
-	return_module_language($current_language,'ConfidentialInfo'),
-	return_module_language($current_language,'Settings'));
-$smarty->assign("MOD", $mod);
-$smarty->assign("THEME",$theme);
-$smarty->assign("IMAGE_PATH",$image_path);
-$smarty->assign("MODULE_NAME", 'ConfidentialInfo');
-$smarty->assign("MODULE_ICON", 'modules/ConfidentialInfo/Timeout.png');
-$smarty->assign("MODULE_TITLE", $mod['ChangeTimeout']);
-$smarty->assign("MODULE_Description", $mod['ChangeTimeoutDesc']);
+	return_module_language($current_language, 'ConfidentialInfo'),
+	return_module_language($current_language, 'Settings')
+);
+$smarty->assign('MOD', $mod);
+$smarty->assign('THEME', $theme);
+$smarty->assign('IMAGE_PATH', $image_path);
+$smarty->assign('MODULE_NAME', 'ConfidentialInfo');
+$smarty->assign('MODULE', 'ConfidentialInfo');
+$smarty->assign('MODULE_ICON', 'modules/ConfidentialInfo/Timeout.png');
+$smarty->assign('MODULE_TITLE', $mod['ChangeTimeout']);
+$smarty->assign('MODULE_Description', $mod['ChangeTimeoutDesc']);
 
 $rsps = $adb->query('select timeout from vtiger_cicryptinfo limit 1');
 
 if ($adb->num_rows($rsps)==0) {
-	$smarty->assign('CIERROR','true');
-	$smarty->assign('CIERRORMSG',getTranslatedString('InitNotDoneError','ConfidentialInfo'));
+	$smarty->assign('CIERROR', 'true');
+	$smarty->assign('CIERRORMSG', getTranslatedString('InitNotDoneError', 'ConfidentialInfo'));
 } elseif ($adb->num_rows($rsps)==1) {
 	$tovrequest = isset($_REQUEST['timeoutval']) ? vtlib_purify($_REQUEST['timeoutval']) : '';
-	if (!empty($tovrequest) and is_numeric($tovrequest)) {
+	if (!empty($tovrequest) && is_numeric($tovrequest)) {
 		$tovalue = $tovrequest;
-		$adb->pquery('update vtiger_cicryptinfo set timeout = ?',array($tovrequest));
-		$smarty->assign("CIMessage",getTranslatedString('TimeoutValueUpdate','ConfidentialInfo'));
+		$adb->pquery('update vtiger_cicryptinfo set timeout=?', array($tovrequest));
+		$smarty->assign('CIMessage', getTranslatedString('TimeoutValueUpdate', 'ConfidentialInfo'));
 	} else {
 		$row = $adb->fetch_array($rsps);
 		$tovalue = $row['timeout'];
-		$smarty->assign('CIMessage','');
+		$smarty->assign('CIMessage', '');
 	}
-	$smarty->assign('CIERROR','false');
-	$smarty->assign('CITimeout',$tovalue);
+	$smarty->assign('CIERROR', 'false');
+	$smarty->assign('CITimeout', $tovalue);
 } else {
-	$smarty->assign('CIERROR','true');
-	$smarty->assign('CIERRORMSG',getTranslatedString('DBInfoError','ConfidentialInfo'));
+	$smarty->assign('CIERROR', 'true');
+	$smarty->assign('CIERRORMSG', getTranslatedString('DBInfoError', 'ConfidentialInfo'));
 }
 $smarty->display(vtlib_getModuleTemplate('ConfidentialInfo', 'CIChgTimeout.tpl'));
 ?>

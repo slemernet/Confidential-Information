@@ -9,14 +9,14 @@
  ************************************************************************************/
 global $currentModule;
 $modObj = CRMEntity::getInstance($currentModule);
-$ajaxaction = $_REQUEST["ajxaction"];
-if($ajaxaction == 'DETAILVIEW') {
+$ajaxaction = $_REQUEST['ajxaction'];
+if ($ajaxaction == 'DETAILVIEW') {
 	$crmid = vtlib_purify($_REQUEST['recordid']);
 	$fieldname = vtlib_purify($_REQUEST['fldName']);
 	$fieldvalue = utf8RawUrlDecode($_REQUEST['fieldValue']);
-	if($crmid != '') {
+	if ($crmid != '') {
 		$rsps = $adb->query('select * from vtiger_cicryptinfo limit 1');
-		if (empty($rsps) or $adb->num_rows($rsps)==0) {
+		if (empty($rsps) || $adb->num_rows($rsps)==0) {
 			echo ':#:FAILURE';
 		} else {
 			$row = $adb->fetch_array($rsps);
@@ -24,30 +24,29 @@ if($ajaxaction == 'DETAILVIEW') {
 			if (sha1($cidwspinfo)!=$row['paswd']) {
 				echo ':#:FAILURE';
 			} else {
-		
-		$modObj->retrieve_entity_info($crmid, $currentModule);
-		$modObj->column_fields = $modObj->decryptFields($modObj->column_fields,$cidwspinfo);
-		$modObj->column_fields[$fieldname] = $fieldvalue;
-		$modObj->column_fields = $modObj->encryptFields($modObj->column_fields,$cidwspinfo);
-		$modObj->id = $crmid;
-		$modObj->mode = 'edit';
-		list($saveerror,$errormessage,$error_action,$returnvalues) = $modObj->preSaveCheck($_REQUEST);
-		if ($saveerror) { // there is an error so we report error
-			echo ':#:ERR'.$errormessage;
-		} else {
-			$modObj->save($currentModule);
-			if ($modObj->id != '') {
-				echo ':#:SUCCESS';
-			} else {
-				echo ':#:FAILURE';
-			}
-		}
+				$modObj->retrieve_entity_info($crmid, $currentModule);
+				$modObj->column_fields = $modObj->decryptFields($modObj->column_fields, $cidwspinfo);
+				$modObj->column_fields[$fieldname] = $fieldvalue;
+				$modObj->column_fields = $modObj->encryptFields($modObj->column_fields, $cidwspinfo);
+				$modObj->id = $crmid;
+				$modObj->mode = 'edit';
+				list($saveerror,$errormessage,$error_action,$returnvalues) = $modObj->preSaveCheck($_REQUEST);
+				if ($saveerror) { // there is an error so we report error
+					echo ':#:ERR'.$errormessage;
+				} else {
+					$modObj->save($currentModule);
+					if ($modObj->id != '') {
+						echo ':#:SUCCESS';
+					} else {
+						echo ':#:FAILURE';
+					}
+				}
 			}
 		}
 	} else {
 		echo ':#:FAILURE';
 	}
-} elseif ($ajaxaction == "LOADRELATEDLIST" || $ajaxaction == "DISABLEMODULE") {
+} elseif ($ajaxaction == 'LOADRELATEDLIST' || $ajaxaction == 'DISABLEMODULE') {
 	require_once 'include/ListView/RelatedListViewContents.php';
 }
 ?>
